@@ -1,250 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Interactive demo of SmartLegal: a Poland-law contract review pipeline with lawyer checkpoints.">
-<title>SmartLegal Contract Review</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<meta name="description" content="Check a contract for gaps and unclear wording. A demo. Not legal advice.">
+<title>Contract check</title>
 <style>
-/* Layout: a review desk. The contract sits on the left like the document on a lawyer's desk;
-   the right side is the case file, one numbered pipeline step (P1.1 to P1.9) per tab. */
 :root {
-  --paper: #f3f5f8;
-  --surface: #ffffff;
-  --sunken: #eaeef3;
-  --ink: #17202c;
-  --muted: #586374;
-  --rule: #d7dde5;
-  --accent: #23408e;
-  --accent-soft: #e3e9f7;
-  --strike: #b42318;
-  --strike-soft: #fbe9e7;
-  --insert: #17673f;
-  --insert-soft: #e3f3ea;
-  --amber: #9a5a06;
-  --amber-soft: #fbefdc;
-  --hatch: rgba(88, 99, 116, 0.09);
-  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --font-doc: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
-  --radius: 6px;
+  --bg: #f4f6f9; --card: #ffffff; --text: #1a2332; --muted: #4a5568; --line: #d5dce6;
+  --brand: #1f4aa8; --brand-ink: #ffffff; --brand-soft: #e8eef9; --focus: #0b57d0;
+  --high-ink: #8a1c12; --high-bg: #fde7e3; --med-ink: #7a4a00; --med-bg: #fdf0d5;
+  --low-ink: #1f4d6b; --low-bg: #e3eef7; --ok: #1d6b3a; --radius: 14px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0f141b; --surface: #161d27; --sunken: #1c2531; --ink: #e5e9f0; --muted: #9aa6b6; --rule: #2a3544;
-    --accent: #9db2f2; --accent-soft: #1f2a44; --strike: #f08a80; --strike-soft: #3a1f1f; --insert: #6fd3a2;
-    --insert-soft: #16302a; --amber: #e9ab4d; --amber-soft: #352816; --hatch: rgba(154, 166, 182, 0.08);
-    color-scheme: dark;
+    --bg: #0e141c; --card: #161e2a; --text: #e7ecf3; --muted: #b3bdcb; --line: #2c3848;
+    --brand: #8fb1ff; --brand-ink: #0e141c; --brand-soft: #1d2b47; --focus: #9ec0ff;
+    --high-ink: #ffb4a8; --high-bg: #3b1c18; --med-ink: #ffd58a; --med-bg: #3a2d12;
+    --low-ink: #b6d7ef; --low-bg: #1a2d3c; --ok: #8fe0ad;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #0f141b; --surface: #161d27; --sunken: #1c2531; --ink: #e5e9f0; --muted: #9aa6b6; --rule: #2a3544;
-  --accent: #9db2f2; --accent-soft: #1f2a44; --strike: #f08a80; --strike-soft: #3a1f1f; --insert: #6fd3a2;
-  --insert-soft: #16302a; --amber: #e9ab4d; --amber-soft: #352816; --hatch: rgba(154, 166, 182, 0.08);
-  color-scheme: dark;
+  --bg: #0e141c; --card: #161e2a; --text: #e7ecf3; --muted: #b3bdcb; --line: #2c3848;
+  --brand: #8fb1ff; --brand-ink: #0e141c; --brand-soft: #1d2b47; --focus: #9ec0ff;
+  --high-ink: #ffb4a8; --high-bg: #3b1c18; --med-ink: #ffd58a; --med-bg: #3a2d12;
+  --low-ink: #b6d7ef; --low-bg: #1a2d3c; --ok: #8fe0ad;
 }
 * { box-sizing: border-box; }
-body { background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
-.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 48px; display: grid; gap: 20px; }
-h1, h2, h3 { text-wrap: balance; margin: 0; }
-h1 { font-family: var(--font-doc); font-weight: 600; font-size: clamp(1.6rem, 2.6vw, 2.15rem); line-height: 1.2; }
-h2 { font-size: 1.05rem; font-weight: 600; }
-h3 { font-size: 0.95rem; font-weight: 600; }
-p { margin: 0; }
-code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
-button, select, textarea, input { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* Masthead */
-.masthead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; border-bottom: 1px solid var(--rule); padding-bottom: 14px; }
-.brand { display: flex; align-items: baseline; gap: 10px; }
-.brand .mark { font-family: var(--font-doc); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.01em; }
-.brand .mark span { color: var(--accent); }
-.scope { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
-.privacy { font-size: 0.84rem; color: var(--muted); }
-.intro { display: grid; gap: 10px; max-width: 72ch; }
-.intro p { color: var(--muted); }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 0.82rem; color: var(--muted); align-items: center; }
-.legend-item { display: inline-flex; align-items: center; gap: 8px; }
-
-/* Badges */
-.tag { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 2px 9px; font-size: 0.74rem; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap; border: 1px solid transparent; }
-.tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.tag.real { color: var(--insert); background: var(--insert-soft); }
-.tag.placeholder { color: var(--muted); background: repeating-linear-gradient(135deg, var(--hatch) 0 6px, transparent 6px 12px), var(--sunken); border-color: var(--rule); }
-.tag.lawyer { color: var(--accent); background: var(--accent-soft); }
-.tag.demo { color: var(--amber); background: var(--amber-soft); }
-.pill { display: inline-block; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-.sev-critical, .sev-high { color: var(--strike); background: var(--strike-soft); }
-.sev-medium { color: var(--amber); background: var(--amber-soft); }
-.sev-low, .sev-info { color: var(--muted); background: var(--sunken); }
-.chip { display: inline-block; border: 1px solid var(--rule); border-radius: 4px; padding: 0 6px; font-size: 0.75rem; color: var(--muted); font-family: var(--font-mono); white-space: nowrap; }
-.outcome { display: inline-block; font-size: 0.75rem; font-weight: 600; border-radius: 4px; padding: 1px 7px; white-space: nowrap; }
-.outcome.found { color: var(--insert); background: var(--insert-soft); }
-.outcome.false_alarm { color: var(--strike); background: var(--strike-soft); }
-.outcome.missed { color: var(--amber); background: var(--amber-soft); }
-
-/* Desk */
-.desk { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; align-items: start; }
-.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); min-width: 0; }
-.panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--rule); }
-.panel-body { padding: 16px; display: grid; gap: 14px; min-width: 0; }
-
-/* Contract input */
-.field { display: grid; gap: 6px; }
-.field label, .label { font-size: 0.78rem; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
-select, input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 8px 10px; }
-textarea { width: 100%; min-height: 420px; resize: vertical; background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px; font-family: var(--font-doc); font-size: 0.95rem; line-height: 1.55; }
-.sample-note { font-size: 0.85rem; color: var(--muted); }
-.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.btn { border: 1px solid var(--rule); background: var(--surface); border-radius: var(--radius); padding: 8px 14px; cursor: pointer; font-weight: 500; }
-.btn:hover { background: var(--sunken); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
-.btn.primary:hover { filter: brightness(1.08); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.file-label { font-size: 0.85rem; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.file-label input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.warn-note { font-size: 0.82rem; color: var(--muted); border-left: 3px solid var(--amber); padding-left: 10px; }
-
-/* Docket of steps */
-.docket { display: flex; gap: 4px; overflow-x: auto; padding: 10px 12px 0; border-bottom: 1px solid var(--rule); scrollbar-width: thin; }
-.step { flex: 0 0 auto; display: grid; gap: 2px; text-align: left; border: 1px solid transparent; border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; background: none; padding: 8px 12px 10px; cursor: pointer; color: var(--muted); position: relative; }
-.step .num { font-family: var(--font-mono); font-size: 0.72rem; }
-.step .name { font-size: 0.86rem; font-weight: 500; white-space: nowrap; }
-.step .state { position: absolute; top: 8px; right: 6px; width: 7px; height: 7px; border-radius: 50%; }
-.step[data-state="done"] .state { background: var(--insert); }
-.step[data-state="waiting"] .state { background: var(--accent); }
-.step[data-state="locked"] .state { background: var(--rule); }
-.step[data-kind="placeholder"] .name { text-decoration: underline dotted var(--muted); text-underline-offset: 4px; }
-.step[aria-selected="true"] { background: var(--surface); border-color: var(--rule); color: var(--ink); margin-bottom: -1px; }
-.stage { padding: 18px 16px 20px; display: grid; gap: 16px; min-width: 0; }
-.stage-head { display: grid; gap: 6px; }
-.stage-head .row { gap: 8px; }
-.stage-head p { color: var(--muted); max-width: 70ch; }
-.banner { border: 1px dashed var(--rule); border-radius: var(--radius); background: repeating-linear-gradient(135deg, var(--hatch) 0 8px, transparent 8px 16px); padding: 10px 12px; font-size: 0.86rem; color: var(--muted); }
-.banner strong { color: var(--ink); }
-.locked { border: 1px dashed var(--rule); border-radius: var(--radius); padding: 18px; color: var(--muted); text-align: center; }
-
-/* Facts, scorecard */
-.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.fact { border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
-.fact .v { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.fact .v.small { font-size: 0.85rem; font-family: var(--font-mono); font-weight: 400; }
-.fact .k { font-size: 0.78rem; color: var(--muted); }
-.fact.good .v { color: var(--insert); } .fact.bad .v { color: var(--strike); } .fact.warn .v { color: var(--amber); }
-
-/* Clause and finding lists */
-.list { display: grid; gap: 10px; }
-.section-group { display: grid; gap: 6px; }
-.section-title { font-family: var(--font-doc); font-weight: 600; font-size: 1rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-.clause { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: 10px; padding: 8px 10px; border-radius: var(--radius); background: var(--paper); }
-.clause .meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); padding-top: 2px; }
-.clause .body { display: grid; gap: 4px; min-width: 0; }
-.clause .text { font-family: var(--font-doc); overflow-wrap: anywhere; }
-.clause.heading-only { background: var(--amber-soft); }
-.tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.card { border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
-.card.is-false_alarm { border-left: 3px solid var(--strike); }
-.card.is-found { border-left: 3px solid var(--insert); }
-.card .quote { font-family: var(--font-doc); color: var(--ink); background: var(--paper); border-radius: 4px; padding: 8px 10px; overflow-wrap: anywhere; }
-.card .why { font-size: 0.88rem; color: var(--muted); }
-.missed-list { display: grid; gap: 8px; }
-.missed { border: 1px dashed var(--amber); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 4px; }
-dl.kv { display: grid; grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 0.9rem; }
-dl.kv dt { color: var(--muted); }
-dl.kv dd { margin: 0; overflow-wrap: anywhere; }
-
-/* Review forms */
-.decision { display: grid; gap: 8px; border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 14px; }
-.choices { display: flex; flex-wrap: wrap; gap: 6px; }
-.choices label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: 0.86rem; }
-.choices input { accent-color: var(--accent); }
-.choices label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.reviewer { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-.confirm { display: flex; gap: 8px; align-items: flex-start; font-size: 0.88rem; }
-.form-error { color: var(--strike); font-size: 0.86rem; }
-
-/* Redline */
-.redline { font-family: var(--font-doc); line-height: 1.65; display: grid; gap: 6px; }
-del { color: var(--strike); text-decoration-thickness: 1.5px; background: var(--strike-soft); }
-ins { color: var(--insert); text-decoration: underline double; text-underline-offset: 3px; background: var(--insert-soft); }
-
-/* Provenance chain */
-.chain { display: grid; gap: 0; }
-.link { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 10px; }
-.link .rail { display: grid; justify-items: center; grid-template-rows: 12px 1fr; }
-.link .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--accent); background: var(--surface); }
-.link .line { width: 2px; background: var(--rule); }
-.link:last-child .line { background: transparent; }
-.link .content { padding-bottom: 14px; display: grid; gap: 2px; min-width: 0; }
-.link .hash { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); overflow-wrap: anywhere; }
-.closure { border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 6px; }
-.footer { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 4px; }
-
-@media (max-width: 980px) {
-  .desk { grid-template-columns: minmax(0, 1fr); }
-  textarea { min-height: 260px; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
-@media (max-width: 520px) {
-  .wrap { padding-inline: 16px; }
-  .clause { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  dl.kv { grid-template-columns: minmax(0, 1fr); }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+.skip { position: absolute; left: -9999px; top: 0; }
+.skip:focus { left: 16px; top: 8px; background: var(--card); color: var(--text); padding: 8px 12px; border-radius: 8px; z-index: 9; }
+.site-head { padding: 20px 0 4px; }
+.brand { margin: 0; font-weight: 700; font-size: 1.25rem; }
+.notice {
+  background: var(--brand-soft); border-radius: var(--radius); padding: 12px 16px; margin: 12px 0 20px; font-size: .95rem;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .stage { animation: fade 160ms ease-out; }
-  @keyframes fade { from { opacity: 0.4; } to { opacity: 1; } }
+.steps { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0; margin: 0 0 16px; }
+.steps li { margin: 0; }
+.steps .step {
+  width: 100%; min-height: 48px; display: flex; align-items: center; gap: 8px; padding: 8px;
+  background: transparent; border: 0; border-radius: 10px; font: inherit; font-size: .9rem; color: var(--muted); text-align: left; cursor: default;
+}
+button.step { cursor: pointer; }
+button.step:hover { background: var(--card); }
+.num {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .85rem; border: 2px solid var(--line); color: var(--muted); background: var(--card);
+}
+.steps .current { color: var(--text); font-weight: 600; }
+.steps .current .num { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.steps .done .num { background: var(--brand-soft); border-color: var(--brand-soft); color: var(--text); }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; margin: 0 0 32px;
+}
+h1 { font-size: 1.55rem; line-height: 1.25; margin: 0 0 8px; }
+h1:focus { outline: none; }
+h2 { font-size: 1.12rem; line-height: 1.35; margin: 0; }
+.lead { color: var(--muted); margin: 0 0 20px; }
+fieldset { border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+legend { font-weight: 600; margin: 0 0 10px; padding: 0; }
+.choice {
+  display: flex; gap: 12px; align-items: flex-start; border: 2px solid var(--line); border-radius: 12px;
+  padding: 14px; margin: 0 0 10px; cursor: pointer; min-height: 56px;
+}
+.choice:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+.choice:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.choice input { margin-top: 4px; width: 20px; height: 20px; accent-color: var(--brand); flex: none; }
+.choice-title { display: block; font-weight: 600; }
+.choice-meta { display: block; color: var(--muted); font-size: .9rem; }
+.paste { margin: 4px 0 8px; }
+.paste[hidden] { display: none; }
+.paste label { display: block; font-weight: 600; margin-bottom: 6px; }
+textarea {
+  width: 100%; font: inherit; font-size: 1rem; line-height: 1.5; padding: 12px; min-height: 180px; resize: vertical;
+  border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text);
+}
+textarea:focus { outline: 3px solid var(--focus); outline-offset: 2px; border-color: var(--brand); }
+.hint, .fine { color: var(--muted); font-size: .9rem; }
+.error { color: var(--high-ink); font-weight: 600; margin: 12px 0 0; }
+.error:empty { display: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+.btn {
+  font: inherit; font-weight: 600; min-height: 48px; padding: 0 20px; border-radius: 12px; cursor: pointer;
+  border: 2px solid var(--brand); background: var(--card); color: var(--brand);
+}
+.btn.primary { background: var(--brand); color: var(--brand-ink); }
+.btn:hover { filter: brightness(.96); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus); outline-offset: 2px;
+}
+.pill { display: inline-block; font-size: .85rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.p-high { background: var(--high-bg); color: var(--high-ink); }
+.p-medium { background: var(--med-bg); color: var(--med-ink); }
+.p-low { background: var(--low-bg); color: var(--low-ink); }
+.tag { display: inline-block; font-size: .82rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; }
+.progress-line { display: flex; align-items: center; gap: 12px; color: var(--muted); margin: 18px 0 4px; font-size: .95rem; }
+progress { flex: 1; height: 12px; appearance: none; -webkit-appearance: none; border: 0; border-radius: 6px; background: var(--line); overflow: hidden; }
+progress::-webkit-progress-bar { background: var(--line); border-radius: 6px; }
+progress::-webkit-progress-value { background: var(--brand); border-radius: 6px; }
+progress::-moz-progress-bar { background: var(--brand); border-radius: 6px; }
+.findings { list-style: none; padding: 0; margin: 16px 0 0; }
+.finding { border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 0 0 12px; }
+.finding.is-reviewed { border-color: var(--ok); }
+.f-head { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.where { color: var(--muted); margin: 0 0 8px; font-size: .92rem; }
+.finding p { margin: 0 0 8px; }
+details { margin: 4px 0 0; }
+summary { cursor: pointer; color: var(--brand); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+blockquote {
+  margin: 6px 0 0; padding: 12px 14px; border-left: 4px solid var(--line); background: var(--bg);
+  border-radius: 8px; white-space: pre-wrap; font-size: .95rem;
+}
+.check { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; cursor: pointer; margin-top: 6px; }
+.check input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--brand); flex: none; }
+.summary-list { list-style: none; padding: 0; margin: 12px 0 0; }
+.summary-list li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.status { color: var(--muted); font-size: .9rem; }
+.ack { background: var(--bg); border-radius: 12px; padding: 14px 16px; margin: 20px 0 0; }
+.ack .check { margin-top: 4px; }
+.calm { background: var(--brand-soft); border-radius: 12px; padding: 14px 16px; margin: 16px 0 0; }
+.calm p { margin: 0; }
+footer { padding: 4px 0 40px; }
+.steps .step { font-size: .85rem; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 6px; }
+.steps .step > span:last-child { line-height: 1.2; }
+.note { border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; margin: 0 0 16px; font-size: .95rem; color: var(--muted); }
+.placeholder-note .tag { color: var(--med-ink); border-color: var(--med-bg); background: var(--med-bg); margin-right: 6px; }
+.status-pill { font-size: .85rem; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.change-card.is-accepted { border-color: var(--ok); }
+.change-card.is-skipped { opacity: .85; }
+.change-card blockquote.proposed { border-left-color: var(--brand); font-style: italic; color: var(--muted); }
+.change-card p { margin: 8px 0 4px; }
+.choice-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.choice-row .btn { min-width: 120px; }
+.btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--brand); }
+.form { margin: 0 0 8px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin: 0 0 16px; }
+.field label { font-weight: 600; }
+.field input, .field select {
+  font: inherit; font-size: 1rem; min-height: 48px; padding: 10px 12px; border-radius: 12px;
+  border: 2px solid var(--line); background: var(--card); color: var(--text); max-width: 100%;
+}
+.field input:focus, .field select:focus { outline: 3px solid var(--focus); outline-offset: 2px; border-color: var(--brand); }
+.field input:disabled, .field select:disabled { opacity: .7; }
+.sub { font-size: 1.05rem; margin: 24px 0 10px; }
+.redline-list { list-style: none; padding: 0; margin: 0; }
+.redline-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 0 0 12px; }
+.redline { font-size: .95rem; line-height: 1.6; }
+.redline del { background: var(--high-bg); color: var(--high-ink); text-decoration: line-through; padding: 1px 3px; border-radius: 4px; display: block; margin-bottom: 6px; white-space: pre-wrap; }
+.redline ins { background: var(--brand-soft); color: var(--text); text-decoration: none; padding: 1px 3px; border-radius: 4px; display: block; font-style: italic; white-space: pre-wrap; }
+.log { padding-left: 20px; margin: 0; font-size: .95rem; }
+.log li { margin: 0 0 6px; }
+@media (max-width: 480px) { .steps .step { font-size: .78rem; } .steps .num { width: 24px; height: 24px; font-size: .78rem; } }
+@media (min-width: 640px) {
+  .card { padding: 32px; }
+  h1 { font-size: 1.9rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
 </style>
-
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
-  <header class="masthead">
-    <div class="brand"><span class="mark">Smart<span>Legal</span></span><span class="scope">PL · B2B IT services · contract review · v1 scope</span></div>
-    <p class="privacy">Demo. Runs entirely in this browser tab; nothing you paste is sent anywhere. Not legal advice.</p>
-  </header>
-
-  <section class="intro">
-    <h1>Contract review, one step at a time</h1>
-    <p>Pick a sample contract or paste your own, then follow it through the review pipeline: intake, clause extraction, issue spotting, research, analysis, proposed amendments, two lawyer checkpoints, the redline and the audit trail. Use synthetic or public contracts only.</p>
-    <div class="legend">
-      <span class="legend-item"><span class="tag real">Real code</span>runs the same code as the SmartLegal repository</span>
-      <span class="legend-item"><span class="tag placeholder">Placeholder</span>fixed test output; not connected yet</span>
-      <span class="legend-item"><span class="tag lawyer">Lawyer checkpoint</span>nothing moves on without a qualified reviewer</span>
-    </div>
-  </section>
-
-  <main class="desk">
-    <section class="panel" aria-labelledby="contract-title">
-      <div class="panel-head"><h2 id="contract-title">Contract</h2><span class="tag real">P1.1 input</span></div>
-      <div class="panel-body">
-        <div class="field">
-          <label for="sample">Sample contract</label>
-          <select id="sample"></select>
-          <p class="sample-note" id="sample-note"></p>
-        </div>
-        <div class="field">
-          <label for="contract">Contract text</label>
-          <textarea id="contract" spellcheck="false"></textarea>
-        </div>
-        <div class="row">
-          <button class="btn primary" id="run" type="button">Run review</button>
-          <label class="file-label">Open a .txt or .md file<input id="file" type="file" accept=".txt,.md,text/plain,text/markdown"></label>
-        </div>
-        <p class="warn-note">Headings like <code>§ 8. Odpowiedzialność</code> or <code>8. LIABILITY</code> start a new section. Put each paragraph on its own line.</p>
-      </div>
-    </section>
-
-    <section class="panel" aria-labelledby="case-title">
-      <div class="panel-head"><h2 id="case-title">Case file</h2><span class="sample-note" id="case-sub"></span></div>
-      <nav class="docket" role="tablist" aria-label="Review steps" id="docket"></nav>
-      <div class="stage" id="stage" role="tabpanel"></div>
-    </section>
+  <header class="site-head"><p class="brand">Contract check</p></header>
+  <div class="notice" role="note"><strong>This is a demo, not legal advice.</strong> Your text stays in this browser tab and is not sent anywhere.</div>
+  <nav aria-label="Progress">
+    <ol class="steps" id="steps"></ol>
+  </nav>
+  <main id="main">
+    <section class="card" id="view"></section>
   </main>
-
-  <footer class="footer">
-    <p>Steps P1.1 to P1.3 are the repository's own intake normalizer, clause extraction and issue spotting, compiled to run in the browser. In the product, P1.1 reads PDF or DOCX through Docling; here it reads text. Later steps show what the pipeline returns today with its test adapters.</p>
-    <p>Sample contracts are synthetic and their expected findings are not yet reviewed by a lawyer. Production delivery stays blocked until the controlled pilot gate is passed.</p>
-  </footer>
+  <footer class="fine">Example contracts are made up for testing. Built from the SmartLegal project.</footer>
 </div>
-
 <script>"use strict";(()=>{var dm=Object.defineProperty;var oe=(t,r)=>{for(var i in r)dm(t,i,{get:r[i],enumerable:!0})};var mm=new Uint32Array([1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298]);function pm(t){let r=new Uint32Array([1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225]),i=t.length,o=new Uint8Array(i+9+63>>6<<6);o.set(t),o[i]=128;let e=new DataView(o.buffer);e.setUint32(o.length-8,Math.floor(i*8/2**32)),e.setUint32(o.length-4,i*8>>>0);let n=new Uint32Array(64);for(let a=0;a<o.length;a+=64){for(let S=0;S<16;S+=1)n[S]=e.getUint32(a+S*4);for(let S=16;S<64;S+=1){let z=n[S-15],N=n[S-2],ee=(z>>>7|z<<25)^(z>>>18|z<<14)^z>>>3,T=(N>>>17|N<<15)^(N>>>19|N<<13)^N>>>10;n[S]=n[S-16]+ee+n[S-7]+T>>>0}let[c,u,s,l,p,$,g,x]=[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7]];for(let S=0;S<64;S+=1){let z=(p>>>6|p<<26)^(p>>>11|p<<21)^(p>>>25|p<<7),N=x+z+(p&$^~p&g)+mm[S]+n[S]>>>0,T=((c>>>2|c<<30)^(c>>>13|c<<19)^(c>>>22|c<<10))+(c&u^c&s^u&s)>>>0;x=g,g=$,$=p,p=l+N>>>0,l=s,s=u,u=c,c=N+T>>>0}r[0]=r[0]+c>>>0,r[1]=r[1]+u>>>0,r[2]=r[2]+s>>>0,r[3]=r[3]+l>>>0,r[4]=r[4]+p>>>0,r[5]=r[5]+$>>>0,r[6]=r[6]+g>>>0,r[7]=r[7]+x>>>0}return Array.from(r,a=>a.toString(16).padStart(8,"0")).join("")}function X(t){if(t!=="sha256")throw new Error(`Browser demo supports sha256 only, not ${t}.`);let r=[],i={update(o){return r.push(typeof o=="string"?new TextEncoder().encode(o):o),i},digest(o){if(o!=="hex")throw new Error("Browser demo supports hex digests only.");let e=r.reduce((c,u)=>c+u.length,0),n=new Uint8Array(e),a=0;for(let c of r)n.set(c,a),a+=c.length;return pm(n)}};return i}var K=t=>()=>{throw new Error(`${t} is not available in the browser demo.`)},Pn=K("readFile"),Un=K("writeFile"),Dn=K("mkdir"),Ju=K("stat"),fm=K("access"),gm=K("readdir"),Pg=K("open"),Ug=K("rename"),Dg=K("rm"),Og=K("appendFile"),Zg=K("copyFile");var Ng=K("createReadStream");var Mu=t=>{let r=t.startsWith("/"),i=[];for(let o of t.split("/"))!o||o==="."||(o===".."?i.pop():i.push(o));return`${r?"/":""}${i.join("/")}`||(r?"/":".")};var On=(...t)=>{let r="";for(let i of t)r=i.startsWith("/")?i:`${r}/${i}`;return Mu(r.startsWith("/")?r:`/${r}`)},Ft=t=>Mu(t).replace(/\/[^/]*$/,"")||"/";var f={};oe(f,{$brand:()=>Nn,$input:()=>ra,$output:()=>ta,NEVER:()=>Zn,TimePrecision:()=>aa,ZodAny:()=>qc,ZodArray:()=>Qc,ZodBase64:()=>gn,ZodBase64URL:()=>vn,ZodBigInt:()=>at,ZodBigIntFormat:()=>_n,ZodBoolean:()=>ot,ZodCIDRv4:()=>pn,ZodCIDRv6:()=>fn,ZodCUID:()=>an,ZodCUID2:()=>cn,ZodCatch:()=>yu,ZodCodec:()=>Rt,ZodCustom:()=>Lt,ZodCustomStringFormat:()=>nt,ZodDate:()=>Nt,ZodDefault:()=>gu,ZodDiscriminatedUnion:()=>tu,ZodE164:()=>hn,ZodEmail:()=>rn,ZodEmoji:()=>nn,ZodEnum:()=>tt,ZodError:()=>Wf,ZodExactOptional:()=>mu,ZodFile:()=>lu,ZodFirstPartyTypeKind:()=>Nu,ZodFunction:()=>Du,ZodGUID:()=>Pt,ZodIPv4:()=>dn,ZodIPv6:()=>mn,ZodISODate:()=>Xr,ZodISODateTime:()=>qr,ZodISODuration:()=>Hr,ZodISOTime:()=>Yr,ZodIntersection:()=>ru,ZodIssueCode:()=>qf,ZodJWT:()=>$n,ZodKSUID:()=>ln,ZodLazy:()=>ju,ZodLiteral:()=>su,ZodMAC:()=>Vc,ZodMap:()=>cu,ZodNaN:()=>ku,ZodNanoID:()=>on,ZodNever:()=>Yc,ZodNonOptional:()=>In,ZodNull:()=>Wc,ZodNullable:()=>fu,ZodNumber:()=>it,ZodNumberFormat:()=>Pe,ZodObject:()=>Et,ZodOptional:()=>zn,ZodPipe:()=>Ct,ZodPrefault:()=>hu,ZodPreprocess:()=>zu,ZodPromise:()=>Uu,ZodReadonly:()=>Iu,ZodRealError:()=>B,ZodRecord:()=>et,ZodSet:()=>uu,ZodString:()=>rt,ZodStringFormat:()=>U,ZodSuccess:()=>bu,ZodSymbol:()=>Bc,ZodTemplateLiteral:()=>Su,ZodTransform:()=>du,ZodTuple:()=>iu,ZodType:()=>I,ZodULID:()=>un,ZodURL:()=>Zt,ZodUUID:()=>ie,ZodUndefined:()=>Gc,ZodUnion:()=>At,ZodUnknown:()=>Xc,ZodVoid:()=>Hc,ZodXID:()=>sn,ZodXor:()=>eu,_ZodString:()=>tn,_default:()=>vu,_function:()=>Od,any:()=>sd,array:()=>Tt,base64:()=>Gl,base64url:()=>Wl,bigint:()=>id,boolean:()=>Mc,catch:()=>xu,check:()=>Zd,cidrv4:()=>Ml,cidrv6:()=>Bl,clone:()=>R,codec:()=>jd,coerce:()=>Tu,config:()=>Z,core:()=>ue,cuid:()=>El,cuid2:()=>Al,custom:()=>Nd,date:()=>dd,decode:()=>Tc,decodeAsync:()=>Ac,describe:()=>Td,discriminatedUnion:()=>hd,e164:()=>Kl,email:()=>wl,emoji:()=>Nl,encode:()=>Nc,encodeAsync:()=>Ec,endsWith:()=>Me,enum:()=>xn,exactOptional:()=>pu,file:()=>zd,flattenError:()=>gt,float32:()=>ed,float64:()=>td,formatError:()=>vt,fromJSONSchema:()=>Vd,function:()=>Od,getErrorMap:()=>Yf,globalRegistry:()=>A,gt:()=>re,gte:()=>F,guid:()=>Sl,hash:()=>Ql,hex:()=>Hl,hostname:()=>Yl,httpUrl:()=>Zl,includes:()=>Ve,instanceof:()=>Ad,int:()=>Qr,int32:()=>rd,int64:()=>od,intersection:()=>nu,invertCodec:()=>Pd,ipv4:()=>Fl,ipv6:()=>Jl,iso:()=>Qe,json:()=>Rd,jwt:()=>ql,keyof:()=>md,ksuid:()=>Ll,lazy:()=>Pu,length:()=>Se,literal:()=>kd,locales:()=>zt,looseObject:()=>gd,looseRecord:()=>_d,lowercase:()=>Le,lt:()=>te,lte:()=>W,mac:()=>Vl,map:()=>bd,maxLength:()=>we,maxSize:()=>he,meta:()=>Ed,mime:()=>Be,minLength:()=>ce,minSize:()=>ne,multipleOf:()=>ve,nan:()=>Sd,nanoid:()=>Tl,nativeEnum:()=>xd,negative:()=>Rr,never:()=>bn,nonnegative:()=>Fr,nonoptional:()=>_u,nonpositive:()=>Lr,normalize:()=>Ge,null:()=>Kc,nullable:()=>Dt,nullish:()=>Id,number:()=>Jc,object:()=>pd,optional:()=>Ut,overwrite:()=>H,parse:()=>Uc,parseAsync:()=>Dc,partialRecord:()=>$d,pipe:()=>en,positive:()=>Cr,prefault:()=>$u,preprocess:()=>Ld,prettifyError:()=>Wn,promise:()=>Dd,property:()=>Vr,readonly:()=>wu,record:()=>au,refine:()=>Ou,regex:()=>Re,regexes:()=>G,registry:()=>hr,safeDecode:()=>Rc,safeDecodeAsync:()=>Fc,safeEncode:()=>Cc,safeEncodeAsync:()=>Lc,safeParse:()=>Oc,safeParseAsync:()=>Zc,set:()=>yd,setErrorMap:()=>Xf,size:()=>Ie,slugify:()=>Xe,startsWith:()=>Je,strictObject:()=>fd,string:()=>jt,stringFormat:()=>Xl,stringbool:()=>Cd,success:()=>wd,superRefine:()=>Zu,symbol:()=>cd,templateLiteral:()=>Ud,toJSONSchema:()=>Gr,toLowerCase:()=>Ke,toUpperCase:()=>qe,transform:()=>kn,treeifyError:()=>Gn,trim:()=>We,tuple:()=>ou,uint32:()=>nd,uint64:()=>ad,ulid:()=>Cl,undefined:()=>ud,union:()=>yn,unknown:()=>je,uppercase:()=>Fe,url:()=>Ol,util:()=>_,uuid:()=>jl,uuidv4:()=>Pl,uuidv6:()=>Ul,uuidv7:()=>Dl,void:()=>ld,xid:()=>Rl,xor:()=>vd});var ue={};oe(ue,{$ZodAny:()=>ko,$ZodArray:()=>jo,$ZodAsyncError:()=>Y,$ZodBase64:()=>po,$ZodBase64URL:()=>fo,$ZodBigInt:()=>sr,$ZodBigIntFormat:()=>_o,$ZodBoolean:()=>bt,$ZodCIDRv4:()=>so,$ZodCIDRv6:()=>lo,$ZodCUID:()=>Yi,$ZodCUID2:()=>Hi,$ZodCatch:()=>Go,$ZodCheck:()=>D,$ZodCheckBigIntFormat:()=>Si,$ZodCheckEndsWith:()=>Ri,$ZodCheckGreaterThan:()=>nr,$ZodCheckIncludes:()=>Ai,$ZodCheckLengthEquals:()=>Zi,$ZodCheckLessThan:()=>rr,$ZodCheckLowerCase:()=>Ti,$ZodCheckMaxLength:()=>Di,$ZodCheckMaxSize:()=>ji,$ZodCheckMimeType:()=>Fi,$ZodCheckMinLength:()=>Oi,$ZodCheckMinSize:()=>Pi,$ZodCheckMultipleOf:()=>Ii,$ZodCheckNumberFormat:()=>wi,$ZodCheckOverwrite:()=>Vi,$ZodCheckProperty:()=>Li,$ZodCheckRegex:()=>Ni,$ZodCheckSizeEquals:()=>Ui,$ZodCheckStartsWith:()=>Ci,$ZodCheckStringFormat:()=>Ae,$ZodCheckUpperCase:()=>Ei,$ZodCodec:()=>xt,$ZodCustom:()=>ea,$ZodCustomStringFormat:()=>ho,$ZodDate:()=>So,$ZodDefault:()=>Vo,$ZodDiscriminatedUnion:()=>Do,$ZodE164:()=>go,$ZodEmail:()=>Wi,$ZodEmoji:()=>qi,$ZodEncodeError:()=>de,$ZodEnum:()=>Eo,$ZodError:()=>ft,$ZodExactOptional:()=>Lo,$ZodFile:()=>Co,$ZodFunction:()=>Yo,$ZodGUID:()=>Bi,$ZodIPv4:()=>ao,$ZodIPv6:()=>co,$ZodISODate:()=>no,$ZodISODateTime:()=>ro,$ZodISODuration:()=>oo,$ZodISOTime:()=>io,$ZodIntersection:()=>Oo,$ZodJWT:()=>vo,$ZodKSUID:()=>to,$ZodLazy:()=>Qo,$ZodLiteral:()=>Ao,$ZodMAC:()=>uo,$ZodMap:()=>No,$ZodNaN:()=>Wo,$ZodNanoID:()=>Xi,$ZodNever:()=>Io,$ZodNonOptional:()=>Mo,$ZodNull:()=>xo,$ZodNullable:()=>Fo,$ZodNumber:()=>ur,$ZodNumberFormat:()=>$o,$ZodObject:()=>ys,$ZodObjectJIT:()=>Po,$ZodOptional:()=>dr,$ZodPipe:()=>mr,$ZodPrefault:()=>Jo,$ZodPreprocess:()=>Ko,$ZodPromise:()=>Ho,$ZodReadonly:()=>qo,$ZodRealError:()=>M,$ZodRecord:()=>Zo,$ZodRegistry:()=>vr,$ZodSet:()=>To,$ZodString:()=>ze,$ZodStringFormat:()=>P,$ZodSuccess:()=>Bo,$ZodSymbol:()=>bo,$ZodTemplateLiteral:()=>Xo,$ZodTransform:()=>Ro,$ZodTuple:()=>lr,$ZodType:()=>k,$ZodULID:()=>Qi,$ZodURL:()=>Ki,$ZodUUID:()=>Gi,$ZodUndefined:()=>yo,$ZodUnion:()=>yt,$ZodUnknown:()=>zo,$ZodVoid:()=>wo,$ZodXID:()=>eo,$ZodXor:()=>Uo,$brand:()=>Nn,$constructor:()=>d,$input:()=>ra,$output:()=>ta,Doc:()=>_t,JSONSchema:()=>kl,JSONSchemaGenerator:()=>Wr,NEVER:()=>Zn,TimePrecision:()=>aa,_any:()=>Sa,_array:()=>Na,_base64:()=>Nr,_base64url:()=>Tr,_bigint:()=>ba,_boolean:()=>$a,_catch:()=>Rf,_check:()=>xl,_cidrv4:()=>Or,_cidrv6:()=>Zr,_coercedBigint:()=>ya,_coercedBoolean:()=>_a,_coercedDate:()=>Oa,_coercedNumber:()=>ma,_coercedString:()=>ia,_cuid:()=>Ir,_cuid2:()=>wr,_custom:()=>Ea,_date:()=>Da,_decode:()=>Wt,_decodeAsync:()=>qt,_default:()=>Ef,_discriminatedUnion:()=>zf,_e164:()=>Er,_email:()=>$r,_emoji:()=>kr,_encode:()=>Gt,_encodeAsync:()=>Kt,_endsWith:()=>Me,_enum:()=>Uf,_file:()=>Ta,_float32:()=>fa,_float64:()=>ga,_gt:()=>re,_gte:()=>F,_guid:()=>It,_includes:()=>Ve,_int:()=>pa,_int32:()=>va,_int64:()=>xa,_intersection:()=>If,_ipv4:()=>Ur,_ipv6:()=>Dr,_isoDate:()=>ua,_isoDateTime:()=>ca,_isoDuration:()=>la,_isoTime:()=>sa,_jwt:()=>Ar,_ksuid:()=>Pr,_lazy:()=>Jf,_length:()=>Se,_literal:()=>Of,_lowercase:()=>Le,_lt:()=>te,_lte:()=>W,_mac:()=>oa,_map:()=>jf,_max:()=>W,_maxLength:()=>we,_maxSize:()=>he,_mime:()=>Be,_min:()=>F,_minLength:()=>ce,_minSize:()=>ne,_multipleOf:()=>ve,_nan:()=>Za,_nanoid:()=>zr,_nativeEnum:()=>Df,_negative:()=>Rr,_never:()=>Pa,_nonnegative:()=>Fr,_nonoptional:()=>Af,_nonpositive:()=>Lr,_normalize:()=>Ge,_null:()=>wa,_nullable:()=>Tf,_number:()=>da,_optional:()=>Nf,_overwrite:()=>H,_parse:()=>Ze,_parseAsync:()=>Ne,_pipe:()=>Lf,_positive:()=>Cr,_promise:()=>Mf,_property:()=>Vr,_readonly:()=>Ff,_record:()=>Sf,_refine:()=>Aa,_regex:()=>Re,_safeDecode:()=>Yt,_safeDecodeAsync:()=>Qt,_safeEncode:()=>Xt,_safeEncodeAsync:()=>Ht,_safeParse:()=>Te,_safeParseAsync:()=>Ee,_set:()=>Pf,_size:()=>Ie,_slugify:()=>Xe,_startsWith:()=>Je,_string:()=>na,_stringFormat:()=>Ye,_stringbool:()=>Fa,_success:()=>Cf,_superRefine:()=>Ca,_symbol:()=>za,_templateLiteral:()=>Vf,_toLowerCase:()=>Ke,_toUpperCase:()=>qe,_transform:()=>Zf,_trim:()=>We,_tuple:()=>wf,_uint32:()=>ha,_uint64:()=>ka,_ulid:()=>Sr,_undefined:()=>Ia,_union:()=>xf,_unknown:()=>ja,_uppercase:()=>Fe,_url:()=>wt,_uuid:()=>_r,_uuidv4:()=>br,_uuidv6:()=>yr,_uuidv7:()=>xr,_void:()=>Ua,_xid:()=>jr,_xor:()=>kf,clone:()=>R,config:()=>Z,createStandardJSONSchemaMethod:()=>He,createToJSONSchemaMethod:()=>Va,decode:()=>Jm,decodeAsync:()=>Bm,describe:()=>Ra,encode:()=>Vm,encodeAsync:()=>Mm,extractDefs:()=>_e,finalize:()=>be,flattenError:()=>gt,formatError:()=>vt,globalConfig:()=>ye,globalRegistry:()=>A,initializeContext:()=>$e,isValidBase64:()=>mo,isValidBase64URL:()=>hs,isValidJWT:()=>$s,locales:()=>zt,meta:()=>La,parse:()=>Mt,parseAsync:()=>Bt,prettifyError:()=>Wn,process:()=>j,regexes:()=>G,registry:()=>hr,safeDecode:()=>Wm,safeDecodeAsync:()=>qm,safeEncode:()=>Gm,safeEncodeAsync:()=>Km,safeParse:()=>Kn,safeParseAsync:()=>qn,toDotPath:()=>Xu,toJSONSchema:()=>Gr,treeifyError:()=>Gn,util:()=>_,version:()=>Ji});var Bu,Zn=Object.freeze({status:"aborted"});function d(t,r,i){function o(c,u){if(c._zod||Object.defineProperty(c,"_zod",{value:{def:u,constr:a,traits:new Set},enumerable:!1}),c._zod.traits.has(t))return;c._zod.traits.add(t),r(c,u);let s=a.prototype,l=Object.keys(s);for(let p=0;p<l.length;p++){let $=l[p];$ in c||(c[$]=s[$].bind(c))}}let e=i?.Parent??Object;class n extends e{}Object.defineProperty(n,"name",{value:t});function a(c){var u;let s=i?.Parent?new n:this;o(s,c),(u=s._zod).deferred??(u.deferred=[]);for(let l of s._zod.deferred)l();return s}return Object.defineProperty(a,"init",{value:o}),Object.defineProperty(a,Symbol.hasInstance,{value:c=>i?.Parent&&c instanceof i.Parent?!0:c?._zod?.traits?.has(t)}),Object.defineProperty(a,"name",{value:t}),a}var Nn=Symbol("zod_brand"),Y=class extends Error{constructor(){super("Encountered Promise during synchronous parse. Use .parseAsync() instead.")}},de=class extends Error{constructor(r){super(`Encountered unidirectional transform during encode: ${r}`),this.name="ZodEncodeError"}};(Bu=globalThis).__zod_globalConfig??(Bu.__zod_globalConfig={});var ye=globalThis.__zod_globalConfig;function Z(t){return t&&Object.assign(ye,t),ye}var _={};oe(_,{BIGINT_FORMAT_RANGES:()=>Mn,Class:()=>En,NUMBER_FORMAT_RANGES:()=>Jn,aborted:()=>ge,allowsEval:()=>Rn,assert:()=>bm,assertEqual:()=>vm,assertIs:()=>$m,assertNever:()=>_m,assertNotEqual:()=>hm,assignProp:()=>pe,base64ToUint8Array:()=>Wu,base64urlToUint8Array:()=>Am,cached:()=>De,captureStackTrace:()=>Jt,cleanEnum:()=>Em,cleanRegex:()=>lt,clone:()=>R,cloneDef:()=>xm,createTransparentProxy:()=>jm,defineLazy:()=>w,esc:()=>Vt,escapeRegex:()=>q,explicitlyAborted:()=>Bn,extend:()=>Dm,finalizeIssue:()=>L,floatSafeRemainder:()=>An,getElementAtPath:()=>km,getEnumValues:()=>st,getLengthableOrigin:()=>pt,getParsedType:()=>Sm,getSizableOrigin:()=>mt,hexToUint8Array:()=>Rm,isObject:()=>xe,isPlainObject:()=>fe,issue:()=>Oe,joinValues:()=>m,jsonStringifyReplacer:()=>Ue,merge:()=>Zm,mergeDefs:()=>ae,normalizeParams:()=>b,nullish:()=>me,numKeys:()=>wm,objectClone:()=>ym,omit:()=>Um,optionalKeys:()=>Vn,parsedType:()=>h,partial:()=>Nm,pick:()=>Pm,prefixIssues:()=>J,primitiveTypes:()=>Fn,promiseAllObject:()=>zm,propertyKeyTypes:()=>dt,randomString:()=>Im,required:()=>Tm,safeExtend:()=>Om,shallowClone:()=>Ln,slugify:()=>Cn,stringifyPrimitive:()=>v,uint8ArrayToBase64:()=>Ku,uint8ArrayToBase64url:()=>Cm,uint8ArrayToHex:()=>Lm,unwrapMessage:()=>ut});function vm(t){return t}function hm(t){return t}function $m(t){}function _m(t){throw new Error("Unexpected value in exhaustive check")}function bm(t){}function st(t){let r=Object.values(t).filter(o=>typeof o=="number");return Object.entries(t).filter(([o,e])=>r.indexOf(+o)===-1).map(([o,e])=>e)}function m(t,r="|"){return t.map(i=>v(i)).join(r)}function Ue(t,r){return typeof r=="bigint"?r.toString():r}function De(t){return{get value(){{let i=t();return Object.defineProperty(this,"value",{value:i}),i}throw new Error("cached value already set")}}}function me(t){return t==null}function lt(t){let r=t.startsWith("^")?1:0,i=t.endsWith("$")?t.length-1:t.length;return t.slice(r,i)}function An(t,r){let i=t/r,o=Math.round(i),e=Number.EPSILON*Math.max(Math.abs(i),1);return Math.abs(i-o)<e?0:i-o}var Gu=Symbol("evaluating");function w(t,r,i){let o;Object.defineProperty(t,r,{get(){if(o!==Gu)return o===void 0&&(o=Gu,o=i()),o},set(e){Object.defineProperty(t,r,{value:e})},configurable:!0})}function ym(t){return Object.create(Object.getPrototypeOf(t),Object.getOwnPropertyDescriptors(t))}function pe(t,r,i){Object.defineProperty(t,r,{value:i,writable:!0,enumerable:!0,configurable:!0})}function ae(...t){let r={};for(let i of t){let o=Object.getOwnPropertyDescriptors(i);Object.assign(r,o)}return Object.defineProperties({},r)}function xm(t){return ae(t._zod.def)}function km(t,r){return r?r.reduce((i,o)=>i?.[o],t):t}function zm(t){let r=Object.keys(t),i=r.map(o=>t[o]);return Promise.all(i).then(o=>{let e={};for(let n=0;n<r.length;n++)e[r[n]]=o[n];return e})}function Im(t=10){let r="abcdefghijklmnopqrstuvwxyz",i="";for(let o=0;o<t;o++)i+=r[Math.floor(Math.random()*r.length)];return i}function Vt(t){return JSON.stringify(t)}function Cn(t){return t.toLowerCase().trim().replace(/[^\w\s-]/g,"").replace(/[\s_-]+/g,"-").replace(/^-+|-+$/g,"")}var Jt="captureStackTrace"in Error?Error.captureStackTrace:(...t)=>{};function xe(t){return typeof t=="object"&&t!==null&&!Array.isArray(t)}var Rn=De(()=>{if(ye.jitless||typeof navigator<"u"&&navigator?.userAgent?.includes("Cloudflare"))return!1;try{let t=Function;return new t(""),!0}catch{return!1}});function fe(t){if(xe(t)===!1)return!1;let r=t.constructor;if(r===void 0||typeof r!="function")return!0;let i=r.prototype;return!(xe(i)===!1||Object.prototype.hasOwnProperty.call(i,"isPrototypeOf")===!1)}function Ln(t){return fe(t)?{...t}:Array.isArray(t)?[...t]:t instanceof Map?new Map(t):t instanceof Set?new Set(t):t}function wm(t){let r=0;for(let i in t)Object.prototype.hasOwnProperty.call(t,i)&&r++;return r}var Sm=t=>{let r=typeof t;switch(r){case"undefined":return"undefined";case"string":return"string";case"number":return Number.isNaN(t)?"nan":"number";case"boolean":return"boolean";case"function":return"function";case"bigint":return"bigint";case"symbol":return"symbol";case"object":return Array.isArray(t)?"array":t===null?"null":t.then&&typeof t.then=="function"&&t.catch&&typeof t.catch=="function"?"promise":typeof Map<"u"&&t instanceof Map?"map":typeof Set<"u"&&t instanceof Set?"set":typeof Date<"u"&&t instanceof Date?"date":typeof File<"u"&&t instanceof File?"file":"object";default:throw new Error(`Unknown data type: ${r}`)}},dt=new Set(["string","number","symbol"]),Fn=new Set(["string","number","bigint","boolean","symbol","undefined"]);function q(t){return t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}function R(t,r,i){let o=new t._zod.constr(r??t._zod.def);return(!r||i?.parent)&&(o._zod.parent=t),o}function b(t){let r=t;if(!r)return{};if(typeof r=="string")return{error:()=>r};if(r?.message!==void 0){if(r?.error!==void 0)throw new Error("Cannot specify both `message` and `error` params");r.error=r.message}return delete r.message,typeof r.error=="string"?{...r,error:()=>r.error}:r}function jm(t){let r;return new Proxy({},{get(i,o,e){return r??(r=t()),Reflect.get(r,o,e)},set(i,o,e,n){return r??(r=t()),Reflect.set(r,o,e,n)},has(i,o){return r??(r=t()),Reflect.has(r,o)},deleteProperty(i,o){return r??(r=t()),Reflect.deleteProperty(r,o)},ownKeys(i){return r??(r=t()),Reflect.ownKeys(r)},getOwnPropertyDescriptor(i,o){return r??(r=t()),Reflect.getOwnPropertyDescriptor(r,o)},defineProperty(i,o,e){return r??(r=t()),Reflect.defineProperty(r,o,e)}})}function v(t){return typeof t=="bigint"?t.toString()+"n":typeof t=="string"?`"${t}"`:`${t}`}function Vn(t){return Object.keys(t).filter(r=>t[r]._zod.optin==="optional"&&t[r]._zod.optout==="optional")}var Jn={safeint:[Number.MIN_SAFE_INTEGER,Number.MAX_SAFE_INTEGER],int32:[-2147483648,2147483647],uint32:[0,4294967295],float32:[-34028234663852886e22,34028234663852886e22],float64:[-Number.MAX_VALUE,Number.MAX_VALUE]},Mn={int64:[BigInt("-9223372036854775808"),BigInt("9223372036854775807")],uint64:[BigInt(0),BigInt("18446744073709551615")]};function Pm(t,r){let i=t._zod.def,o=i.checks;if(o&&o.length>0)throw new Error(".pick() cannot be used on object schemas containing refinements");let n=ae(t._zod.def,{get shape(){let a={};for(let c in r){if(!(c in i.shape))throw new Error(`Unrecognized key: "${c}"`);r[c]&&(a[c]=i.shape[c])}return pe(this,"shape",a),a},checks:[]});return R(t,n)}function Um(t,r){let i=t._zod.def,o=i.checks;if(o&&o.length>0)throw new Error(".omit() cannot be used on object schemas containing refinements");let n=ae(t._zod.def,{get shape(){let a={...t._zod.def.shape};for(let c in r){if(!(c in i.shape))throw new Error(`Unrecognized key: "${c}"`);r[c]&&delete a[c]}return pe(this,"shape",a),a},checks:[]});return R(t,n)}function Dm(t,r){if(!fe(r))throw new Error("Invalid input to extend: expected a plain object");let i=t._zod.def.checks;if(i&&i.length>0){let n=t._zod.def.shape;for(let a in r)if(Object.getOwnPropertyDescriptor(n,a)!==void 0)throw new Error("Cannot overwrite keys on object schemas containing refinements. Use `.safeExtend()` instead.")}let e=ae(t._zod.def,{get shape(){let n={...t._zod.def.shape,...r};return pe(this,"shape",n),n}});return R(t,e)}function Om(t,r){if(!fe(r))throw new Error("Invalid input to safeExtend: expected a plain object");let i=ae(t._zod.def,{get shape(){let o={...t._zod.def.shape,...r};return pe(this,"shape",o),o}});return R(t,i)}function Zm(t,r){if(t._zod.def.checks?.length)throw new Error(".merge() cannot be used on object schemas containing refinements. Use .safeExtend() instead.");let i=ae(t._zod.def,{get shape(){let o={...t._zod.def.shape,...r._zod.def.shape};return pe(this,"shape",o),o},get catchall(){return r._zod.def.catchall},checks:r._zod.def.checks??[]});return R(t,i)}function Nm(t,r,i){let e=r._zod.def.checks;if(e&&e.length>0)throw new Error(".partial() cannot be used on object schemas containing refinements");let a=ae(r._zod.def,{get shape(){let c=r._zod.def.shape,u={...c};if(i)for(let s in i){if(!(s in c))throw new Error(`Unrecognized key: "${s}"`);i[s]&&(u[s]=t?new t({type:"optional",innerType:c[s]}):c[s])}else for(let s in c)u[s]=t?new t({type:"optional",innerType:c[s]}):c[s];return pe(this,"shape",u),u},checks:[]});return R(r,a)}function Tm(t,r,i){let o=ae(r._zod.def,{get shape(){let e=r._zod.def.shape,n={...e};if(i)for(let a in i){if(!(a in n))throw new Error(`Unrecognized key: "${a}"`);i[a]&&(n[a]=new t({type:"nonoptional",innerType:e[a]}))}else for(let a in e)n[a]=new t({type:"nonoptional",innerType:e[a]});return pe(this,"shape",n),n}});return R(r,o)}function ge(t,r=0){if(t.aborted===!0)return!0;for(let i=r;i<t.issues.length;i++)if(t.issues[i]?.continue!==!0)return!0;return!1}function Bn(t,r=0){if(t.aborted===!0)return!0;for(let i=r;i<t.issues.length;i++)if(t.issues[i]?.continue===!1)return!0;return!1}function J(t,r){return r.map(i=>{var o;return(o=i).path??(o.path=[]),i.path.unshift(t),i})}function ut(t){return typeof t=="string"?t:t?.message}function L(t,r,i){let o=t.message?t.message:ut(t.inst?._zod.def?.error?.(t))??ut(r?.error?.(t))??ut(i.customError?.(t))??ut(i.localeError?.(t))??"Invalid input",{inst:e,continue:n,input:a,...c}=t;return c.path??(c.path=[]),c.message=o,r?.reportInput&&(c.input=a),c}function mt(t){return t instanceof Set?"set":t instanceof Map?"map":t instanceof File?"file":"unknown"}function pt(t){return Array.isArray(t)?"array":typeof t=="string"?"string":"unknown"}function h(t){let r=typeof t;switch(r){case"number":return Number.isNaN(t)?"nan":"number";case"object":{if(t===null)return"null";if(Array.isArray(t))return"array";let i=t;if(i&&Object.getPrototypeOf(i)!==Object.prototype&&"constructor"in i&&i.constructor)return i.constructor.name}}return r}function Oe(...t){let[r,i,o]=t;return typeof r=="string"?{message:r,code:"custom",input:i,inst:o}:{...r}}function Em(t){return Object.entries(t).filter(([r,i])=>Number.isNaN(Number.parseInt(r,10))).map(r=>r[1])}function Wu(t){let r=atob(t),i=new Uint8Array(r.length);for(let o=0;o<r.length;o++)i[o]=r.charCodeAt(o);return i}function Ku(t){let r="";for(let i=0;i<t.length;i++)r+=String.fromCharCode(t[i]);return btoa(r)}function Am(t){let r=t.replace(/-/g,"+").replace(/_/g,"/"),i="=".repeat((4-r.length%4)%4);return Wu(r+i)}function Cm(t){return Ku(t).replace(/\+/g,"-").replace(/\//g,"_").replace(/=/g,"")}function Rm(t){let r=t.replace(/^0x/,"");if(r.length%2!==0)throw new Error("Invalid hex string length");let i=new Uint8Array(r.length/2);for(let o=0;o<r.length;o+=2)i[o/2]=Number.parseInt(r.slice(o,o+2),16);return i}function Lm(t){return Array.from(t).map(r=>r.toString(16).padStart(2,"0")).join("")}var En=class{constructor(...r){}};var qu=(t,r)=>{t.name="$ZodError",Object.defineProperty(t,"_zod",{value:t._zod,enumerable:!1}),Object.defineProperty(t,"issues",{value:r,enumerable:!1}),t.message=JSON.stringify(r,Ue,2),Object.defineProperty(t,"toString",{value:()=>t.message,enumerable:!1})},ft=d("$ZodError",qu),M=d("$ZodError",qu,{Parent:Error});function gt(t,r=i=>i.message){let i={},o=[];for(let e of t.issues)e.path.length>0?(i[e.path[0]]=i[e.path[0]]||[],i[e.path[0]].push(r(e))):o.push(r(e));return{formErrors:o,fieldErrors:i}}function vt(t,r=i=>i.message){let i={_errors:[]},o=(e,n=[])=>{for(let a of e.issues)if(a.code==="invalid_union"&&a.errors.length)a.errors.map(c=>o({issues:c},[...n,...a.path]));else if(a.code==="invalid_key")o({issues:a.issues},[...n,...a.path]);else if(a.code==="invalid_element")o({issues:a.issues},[...n,...a.path]);else{let c=[...n,...a.path];if(c.length===0)i._errors.push(r(a));else{let u=i,s=0;for(;s<c.length;){let l=c[s];s===c.length-1?(u[l]=u[l]||{_errors:[]},u[l]._errors.push(r(a))):u[l]=u[l]||{_errors:[]},u=u[l],s++}}}};return o(t),i}function Gn(t,r=i=>i.message){let i={errors:[]},o=(e,n=[])=>{var a,c;for(let u of e.issues)if(u.code==="invalid_union"&&u.errors.length)u.errors.map(s=>o({issues:s},[...n,...u.path]));else if(u.code==="invalid_key")o({issues:u.issues},[...n,...u.path]);else if(u.code==="invalid_element")o({issues:u.issues},[...n,...u.path]);else{let s=[...n,...u.path];if(s.length===0){i.errors.push(r(u));continue}let l=i,p=0;for(;p<s.length;){let $=s[p],g=p===s.length-1;typeof $=="string"?(l.properties??(l.properties={}),(a=l.properties)[$]??(a[$]={errors:[]}),l=l.properties[$]):(l.items??(l.items=[]),(c=l.items)[$]??(c[$]={errors:[]}),l=l.items[$]),g&&l.errors.push(r(u)),p++}}};return o(t),i}function Xu(t){let r=[],i=t.map(o=>typeof o=="object"?o.key:o);for(let o of i)typeof o=="number"?r.push(`[${o}]`):typeof o=="symbol"?r.push(`[${JSON.stringify(String(o))}]`):/[^\w$]/.test(o)?r.push(`[${JSON.stringify(o)}]`):(r.length&&r.push("."),r.push(o));return r.join("")}function Wn(t){let r=[],i=[...t.issues].sort((o,e)=>(o.path??[]).length-(e.path??[]).length);for(let o of i)r.push(`\u2716 ${o.message}`),o.path?.length&&r.push(`  \u2192 at ${Xu(o.path)}`);return r.join(`
 `)}var Ze=t=>(r,i,o,e)=>{let n=o?{...o,async:!1}:{async:!1},a=r._zod.run({value:i,issues:[]},n);if(a instanceof Promise)throw new Y;if(a.issues.length){let c=new(e?.Err??t)(a.issues.map(u=>L(u,n,Z())));throw Jt(c,e?.callee),c}return a.value},Mt=Ze(M),Ne=t=>async(r,i,o,e)=>{let n=o?{...o,async:!0}:{async:!0},a=r._zod.run({value:i,issues:[]},n);if(a instanceof Promise&&(a=await a),a.issues.length){let c=new(e?.Err??t)(a.issues.map(u=>L(u,n,Z())));throw Jt(c,e?.callee),c}return a.value},Bt=Ne(M),Te=t=>(r,i,o)=>{let e=o?{...o,async:!1}:{async:!1},n=r._zod.run({value:i,issues:[]},e);if(n instanceof Promise)throw new Y;return n.issues.length?{success:!1,error:new(t??ft)(n.issues.map(a=>L(a,e,Z())))}:{success:!0,data:n.value}},Kn=Te(M),Ee=t=>async(r,i,o)=>{let e=o?{...o,async:!0}:{async:!0},n=r._zod.run({value:i,issues:[]},e);return n instanceof Promise&&(n=await n),n.issues.length?{success:!1,error:new t(n.issues.map(a=>L(a,e,Z())))}:{success:!0,data:n.value}},qn=Ee(M),Gt=t=>(r,i,o)=>{let e=o?{...o,direction:"backward"}:{direction:"backward"};return Ze(t)(r,i,e)},Vm=Gt(M),Wt=t=>(r,i,o)=>Ze(t)(r,i,o),Jm=Wt(M),Kt=t=>async(r,i,o)=>{let e=o?{...o,direction:"backward"}:{direction:"backward"};return Ne(t)(r,i,e)},Mm=Kt(M),qt=t=>async(r,i,o)=>Ne(t)(r,i,o),Bm=qt(M),Xt=t=>(r,i,o)=>{let e=o?{...o,direction:"backward"}:{direction:"backward"};return Te(t)(r,i,e)},Gm=Xt(M),Yt=t=>(r,i,o)=>Te(t)(r,i,o),Wm=Yt(M),Ht=t=>async(r,i,o)=>{let e=o?{...o,direction:"backward"}:{direction:"backward"};return Ee(t)(r,i,e)},Km=Ht(M),Qt=t=>async(r,i,o)=>Ee(t)(r,i,o),qm=Qt(M);var G={};oe(G,{base64:()=>di,base64url:()=>er,bigint:()=>$i,boolean:()=>bi,browserEmail:()=>np,cidrv4:()=>si,cidrv6:()=>li,cuid:()=>Xn,cuid2:()=>Yn,date:()=>fi,datetime:()=>vi,domain:()=>ap,duration:()=>ri,e164:()=>pi,email:()=>ii,emoji:()=>oi,extendedDuration:()=>Xm,guid:()=>ni,hex:()=>cp,hostname:()=>op,html5Email:()=>ep,httpProtocol:()=>mi,idnEmail:()=>rp,integer:()=>_i,ipv4:()=>ai,ipv6:()=>ci,ksuid:()=>ei,lowercase:()=>ki,mac:()=>ui,md5_base64:()=>sp,md5_base64url:()=>lp,md5_hex:()=>up,nanoid:()=>ti,null:()=>yi,number:()=>tr,rfc5322Email:()=>tp,sha1_base64:()=>mp,sha1_base64url:()=>pp,sha1_hex:()=>dp,sha256_base64:()=>gp,sha256_base64url:()=>vp,sha256_hex:()=>fp,sha384_base64:()=>$p,sha384_base64url:()=>_p,sha384_hex:()=>hp,sha512_base64:()=>yp,sha512_base64url:()=>xp,sha512_hex:()=>bp,string:()=>hi,time:()=>gi,ulid:()=>Hn,undefined:()=>xi,unicodeEmail:()=>Yu,uppercase:()=>zi,uuid:()=>ke,uuid4:()=>Ym,uuid6:()=>Hm,uuid7:()=>Qm,xid:()=>Qn});var Xn=/^[cC][0-9a-z]{6,}$/,Yn=/^[0-9a-z]+$/,Hn=/^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$/,Qn=/^[0-9a-vA-V]{20}$/,ei=/^[A-Za-z0-9]{27}$/,ti=/^[a-zA-Z0-9_-]{21}$/,ri=/^P(?:(\d+W)|(?!.*W)(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+([.,]\d+)?S)?)?)$/,Xm=/^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/,ni=/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/,ke=t=>t?new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${t}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`):/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,Ym=ke(4),Hm=ke(6),Qm=ke(7),ii=/^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,ep=/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,tp=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,Yu=/^[^\s@"]{1,64}@[^\s@]{1,255}$/u,rp=Yu,np=/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,ip="^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$";function oi(){return new RegExp(ip,"u")}var ai=/^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/,ci=/^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$/,ui=t=>{let r=q(t??":");return new RegExp(`^(?:[0-9A-F]{2}${r}){5}[0-9A-F]{2}$|^(?:[0-9a-f]{2}${r}){5}[0-9a-f]{2}$`)},si=/^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/([0-9]|[1-2][0-9]|3[0-2])$/,li=/^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::|([0-9a-fA-F]{1,4})?::([0-9a-fA-F]{1,4}:?){0,6})\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/,di=/^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$/,er=/^[A-Za-z0-9_-]*$/,op=/^(?=.{1,253}\.?$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[-0-9a-zA-Z]{0,61}[0-9a-zA-Z])?)*\.?$/,ap=/^([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,mi=/^https?$/,pi=/^\+[1-9]\d{6,14}$/,Hu="(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))",fi=new RegExp(`^${Hu}$`);function Qu(t){let r="(?:[01]\\d|2[0-3]):[0-5]\\d";return typeof t.precision=="number"?t.precision===-1?`${r}`:t.precision===0?`${r}:[0-5]\\d`:`${r}:[0-5]\\d\\.\\d{${t.precision}}`:`${r}(?::[0-5]\\d(?:\\.\\d+)?)?`}function gi(t){return new RegExp(`^${Qu(t)}$`)}function vi(t){let r=Qu({precision:t.precision}),i=["Z"];t.local&&i.push(""),t.offset&&i.push("([+-](?:[01]\\d|2[0-3]):[0-5]\\d)");let o=`${r}(?:${i.join("|")})`;return new RegExp(`^${Hu}T(?:${o})$`)}var hi=t=>{let r=t?`[\\s\\S]{${t?.minimum??0},${t?.maximum??""}}`:"[\\s\\S]*";return new RegExp(`^${r}$`)},$i=/^-?\d+n?$/,_i=/^-?\d+$/,tr=/^-?\d+(?:\.\d+)?$/,bi=/^(?:true|false)$/i,yi=/^null$/i;var xi=/^undefined$/i;var ki=/^[^A-Z]*$/,zi=/^[^a-z]*$/,cp=/^[0-9a-fA-F]*$/;function ht(t,r){return new RegExp(`^[A-Za-z0-9+/]{${t}}${r}$`)}function $t(t){return new RegExp(`^[A-Za-z0-9_-]{${t}}$`)}var up=/^[0-9a-fA-F]{32}$/,sp=ht(22,"=="),lp=$t(22),dp=/^[0-9a-fA-F]{40}$/,mp=ht(27,"="),pp=$t(27),fp=/^[0-9a-fA-F]{64}$/,gp=ht(43,"="),vp=$t(43),hp=/^[0-9a-fA-F]{96}$/,$p=ht(64,""),_p=$t(64),bp=/^[0-9a-fA-F]{128}$/,yp=ht(86,"=="),xp=$t(86);var D=d("$ZodCheck",(t,r)=>{var i;t._zod??(t._zod={}),t._zod.def=r,(i=t._zod).onattach??(i.onattach=[])}),ts={number:"number",bigint:"bigint",object:"date"},rr=d("$ZodCheckLessThan",(t,r)=>{D.init(t,r);let i=ts[typeof r.value];t._zod.onattach.push(o=>{let e=o._zod.bag,n=(r.inclusive?e.maximum:e.exclusiveMaximum)??Number.POSITIVE_INFINITY;r.value<n&&(r.inclusive?e.maximum=r.value:e.exclusiveMaximum=r.value)}),t._zod.check=o=>{(r.inclusive?o.value<=r.value:o.value<r.value)||o.issues.push({origin:i,code:"too_big",maximum:typeof r.value=="object"?r.value.getTime():r.value,input:o.value,inclusive:r.inclusive,inst:t,continue:!r.abort})}}),nr=d("$ZodCheckGreaterThan",(t,r)=>{D.init(t,r);let i=ts[typeof r.value];t._zod.onattach.push(o=>{let e=o._zod.bag,n=(r.inclusive?e.minimum:e.exclusiveMinimum)??Number.NEGATIVE_INFINITY;r.value>n&&(r.inclusive?e.minimum=r.value:e.exclusiveMinimum=r.value)}),t._zod.check=o=>{(r.inclusive?o.value>=r.value:o.value>r.value)||o.issues.push({origin:i,code:"too_small",minimum:typeof r.value=="object"?r.value.getTime():r.value,input:o.value,inclusive:r.inclusive,inst:t,continue:!r.abort})}}),Ii=d("$ZodCheckMultipleOf",(t,r)=>{D.init(t,r),t._zod.onattach.push(i=>{var o;(o=i._zod.bag).multipleOf??(o.multipleOf=r.value)}),t._zod.check=i=>{if(typeof i.value!=typeof r.value)throw new Error("Cannot mix number and bigint in multiple_of check.");(typeof i.value=="bigint"?i.value%r.value===BigInt(0):An(i.value,r.value)===0)||i.issues.push({origin:typeof i.value,code:"not_multiple_of",divisor:r.value,input:i.value,inst:t,continue:!r.abort})}}),wi=d("$ZodCheckNumberFormat",(t,r)=>{D.init(t,r),r.format=r.format||"float64";let i=r.format?.includes("int"),o=i?"int":"number",[e,n]=Jn[r.format];t._zod.onattach.push(a=>{let c=a._zod.bag;c.format=r.format,c.minimum=e,c.maximum=n,i&&(c.pattern=_i)}),t._zod.check=a=>{let c=a.value;if(i){if(!Number.isInteger(c)){a.issues.push({expected:o,format:r.format,code:"invalid_type",continue:!1,input:c,inst:t});return}if(!Number.isSafeInteger(c)){c>0?a.issues.push({input:c,code:"too_big",maximum:Number.MAX_SAFE_INTEGER,note:"Integers must be within the safe integer range.",inst:t,origin:o,inclusive:!0,continue:!r.abort}):a.issues.push({input:c,code:"too_small",minimum:Number.MIN_SAFE_INTEGER,note:"Integers must be within the safe integer range.",inst:t,origin:o,inclusive:!0,continue:!r.abort});return}}c<e&&a.issues.push({origin:"number",input:c,code:"too_small",minimum:e,inclusive:!0,inst:t,continue:!r.abort}),c>n&&a.issues.push({origin:"number",input:c,code:"too_big",maximum:n,inclusive:!0,inst:t,continue:!r.abort})}}),Si=d("$ZodCheckBigIntFormat",(t,r)=>{D.init(t,r);let[i,o]=Mn[r.format];t._zod.onattach.push(e=>{let n=e._zod.bag;n.format=r.format,n.minimum=i,n.maximum=o}),t._zod.check=e=>{let n=e.value;n<i&&e.issues.push({origin:"bigint",input:n,code:"too_small",minimum:i,inclusive:!0,inst:t,continue:!r.abort}),n>o&&e.issues.push({origin:"bigint",input:n,code:"too_big",maximum:o,inclusive:!0,inst:t,continue:!r.abort})}}),ji=d("$ZodCheckMaxSize",(t,r)=>{var i;D.init(t,r),(i=t._zod.def).when??(i.when=o=>{let e=o.value;return!me(e)&&e.size!==void 0}),t._zod.onattach.push(o=>{let e=o._zod.bag.maximum??Number.POSITIVE_INFINITY;r.maximum<e&&(o._zod.bag.maximum=r.maximum)}),t._zod.check=o=>{let e=o.value;e.size<=r.maximum||o.issues.push({origin:mt(e),code:"too_big",maximum:r.maximum,inclusive:!0,input:e,inst:t,continue:!r.abort})}}),Pi=d("$ZodCheckMinSize",(t,r)=>{var i;D.init(t,r),(i=t._zod.def).when??(i.when=o=>{let e=o.value;return!me(e)&&e.size!==void 0}),t._zod.onattach.push(o=>{let e=o._zod.bag.minimum??Number.NEGATIVE_INFINITY;r.minimum>e&&(o._zod.bag.minimum=r.minimum)}),t._zod.check=o=>{let e=o.value;e.size>=r.minimum||o.issues.push({origin:mt(e),code:"too_small",minimum:r.minimum,inclusive:!0,input:e,inst:t,continue:!r.abort})}}),Ui=d("$ZodCheckSizeEquals",(t,r)=>{var i;D.init(t,r),(i=t._zod.def).when??(i.when=o=>{let e=o.value;return!me(e)&&e.size!==void 0}),t._zod.onattach.push(o=>{let e=o._zod.bag;e.minimum=r.size,e.maximum=r.size,e.size=r.size}),t._zod.check=o=>{let e=o.value,n=e.size;if(n===r.size)return;let a=n>r.size;o.issues.push({origin:mt(e),...a?{code:"too_big",maximum:r.size}:{code:"too_small",minimum:r.size},inclusive:!0,exact:!0,input:o.value,inst:t,continue:!r.abort})}}),Di=d("$ZodCheckMaxLength",(t,r)=>{var i;D.init(t,r),(i=t._zod.def).when??(i.when=o=>{let e=o.value;return!me(e)&&e.length!==void 0}),t._zod.onattach.push(o=>{let e=o._zod.bag.maximum??Number.POSITIVE_INFINITY;r.maximum<e&&(o._zod.bag.maximum=r.maximum)}),t._zod.check=o=>{let e=o.value;if(e.length<=r.maximum)return;let a=pt(e);o.issues.push({origin:a,code:"too_big",maximum:r.maximum,inclusive:!0,input:e,inst:t,continue:!r.abort})}}),Oi=d("$ZodCheckMinLength",(t,r)=>{var i;D.init(t,r),(i=t._zod.def).when??(i.when=o=>{let e=o.value;return!me(e)&&e.length!==void 0}),t._zod.onattach.push(o=>{let e=o._zod.bag.minimum??Number.NEGATIVE_INFINITY;r.minimum>e&&(o._zod.bag.minimum=r.minimum)}),t._zod.check=o=>{let e=o.value;if(e.length>=r.minimum)return;let a=pt(e);o.issues.push({origin:a,code:"too_small",minimum:r.minimum,inclusive:!0,input:e,inst:t,continue:!r.abort})}}),Zi=d("$ZodCheckLengthEquals",(t,r)=>{var i;D.init(t,r),(i=t._zod.def).when??(i.when=o=>{let e=o.value;return!me(e)&&e.length!==void 0}),t._zod.onattach.push(o=>{let e=o._zod.bag;e.minimum=r.length,e.maximum=r.length,e.length=r.length}),t._zod.check=o=>{let e=o.value,n=e.length;if(n===r.length)return;let a=pt(e),c=n>r.length;o.issues.push({origin:a,...c?{code:"too_big",maximum:r.length}:{code:"too_small",minimum:r.length},inclusive:!0,exact:!0,input:o.value,inst:t,continue:!r.abort})}}),Ae=d("$ZodCheckStringFormat",(t,r)=>{var i,o;D.init(t,r),t._zod.onattach.push(e=>{let n=e._zod.bag;n.format=r.format,r.pattern&&(n.patterns??(n.patterns=new Set),n.patterns.add(r.pattern))}),r.pattern?(i=t._zod).check??(i.check=e=>{r.pattern.lastIndex=0,!r.pattern.test(e.value)&&e.issues.push({origin:"string",code:"invalid_format",format:r.format,input:e.value,...r.pattern?{pattern:r.pattern.toString()}:{},inst:t,continue:!r.abort})}):(o=t._zod).check??(o.check=()=>{})}),Ni=d("$ZodCheckRegex",(t,r)=>{Ae.init(t,r),t._zod.check=i=>{r.pattern.lastIndex=0,!r.pattern.test(i.value)&&i.issues.push({origin:"string",code:"invalid_format",format:"regex",input:i.value,pattern:r.pattern.toString(),inst:t,continue:!r.abort})}}),Ti=d("$ZodCheckLowerCase",(t,r)=>{r.pattern??(r.pattern=ki),Ae.init(t,r)}),Ei=d("$ZodCheckUpperCase",(t,r)=>{r.pattern??(r.pattern=zi),Ae.init(t,r)}),Ai=d("$ZodCheckIncludes",(t,r)=>{D.init(t,r);let i=q(r.includes),o=new RegExp(typeof r.position=="number"?`^.{${r.position}}${i}`:i);r.pattern=o,t._zod.onattach.push(e=>{let n=e._zod.bag;n.patterns??(n.patterns=new Set),n.patterns.add(o)}),t._zod.check=e=>{e.value.includes(r.includes,r.position)||e.issues.push({origin:"string",code:"invalid_format",format:"includes",includes:r.includes,input:e.value,inst:t,continue:!r.abort})}}),Ci=d("$ZodCheckStartsWith",(t,r)=>{D.init(t,r);let i=new RegExp(`^${q(r.prefix)}.*`);r.pattern??(r.pattern=i),t._zod.onattach.push(o=>{let e=o._zod.bag;e.patterns??(e.patterns=new Set),e.patterns.add(i)}),t._zod.check=o=>{o.value.startsWith(r.prefix)||o.issues.push({origin:"string",code:"invalid_format",format:"starts_with",prefix:r.prefix,input:o.value,inst:t,continue:!r.abort})}}),Ri=d("$ZodCheckEndsWith",(t,r)=>{D.init(t,r);let i=new RegExp(`.*${q(r.suffix)}$`);r.pattern??(r.pattern=i),t._zod.onattach.push(o=>{let e=o._zod.bag;e.patterns??(e.patterns=new Set),e.patterns.add(i)}),t._zod.check=o=>{o.value.endsWith(r.suffix)||o.issues.push({origin:"string",code:"invalid_format",format:"ends_with",suffix:r.suffix,input:o.value,inst:t,continue:!r.abort})}});function es(t,r,i){t.issues.length&&r.issues.push(...J(i,t.issues))}var Li=d("$ZodCheckProperty",(t,r)=>{D.init(t,r),t._zod.check=i=>{let o=r.schema._zod.run({value:i.value[r.property],issues:[]},{});if(o instanceof Promise)return o.then(e=>es(e,i,r.property));es(o,i,r.property)}}),Fi=d("$ZodCheckMimeType",(t,r)=>{D.init(t,r);let i=new Set(r.mime);t._zod.onattach.push(o=>{o._zod.bag.mime=r.mime}),t._zod.check=o=>{i.has(o.value.type)||o.issues.push({code:"invalid_value",values:r.mime,input:o.value.type,inst:t,continue:!r.abort})}}),Vi=d("$ZodCheckOverwrite",(t,r)=>{D.init(t,r),t._zod.check=i=>{i.value=r.tx(i.value)}});var _t=class{constructor(r=[]){this.content=[],this.indent=0,this&&(this.args=r)}indented(r){this.indent+=1,r(this),this.indent-=1}write(r){if(typeof r=="function"){r(this,{execution:"sync"}),r(this,{execution:"async"});return}let o=r.split(`
 `).filter(a=>a),e=Math.min(...o.map(a=>a.length-a.trimStart().length)),n=o.map(a=>a.slice(e)).map(a=>" ".repeat(this.indent*2)+a);for(let a of n)this.content.push(a)}compile(){let r=Function,i=this?.args,e=[...(this?.content??[""]).map(n=>`  ${n}`)];return new r(...i,e.join(`
@@ -326,456 +259,529 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 <script>window.SMARTLEGAL_SAMPLES = [{"id":"pl-framework-lost-profits-only","title":"Umowa ramowa: wyłączenie utraconych korzyści bez limitu kwotowego","language":"pl","notes":"Synthetic seed case. Excluding lost profits narrows the type of damage but sets no amount cap, so the liability cap is still missing. The penalty in section 6 is capped inside the same sentence ('nie więcej jednak niż 15%').","status":"synthetic_unreviewed","sections":{"3":{"category":"payment"},"4":{"category":"acceptance"},"5":{"category":"intellectual_property"},"6":{"category":"penalties"},"7":{"category":"force_majeure"},"8":{"category":"liability"},"9":{"category":"termination"},"10":{"category":"governing_law"}},"expected_issues":[{"code":"LIABILITY_CAP_MISSING_OR_UNCLEAR","section":"8","why":"Only lost profits are excluded; actual damage remains uncapped."}],"contract":"# UMOWA RAMOWA O ŚWIADCZENIE USŁUG IT\n\nzawarta pomiędzy Iota Energy sp. z o.o. („Zamawiający”) a Kappa Systems sp. z o.o. („Wykonawca”).\n\n## § 1. Przedmiot umowy\n\n1. Umowa określa warunki świadczenia usług IT na podstawie zamówień jednostkowych.\n\n## § 2. Zamówienia\n\n1. Zamówienie jednostkowe określa zakres prac, termin realizacji i wynagrodzenie.\n\n## § 3. Płatności\n\n1. Wynagrodzenie za zamówienie jednostkowe jest płatne w terminie 21 dni od daty doręczenia faktury.\n\n## § 4. Odbiór\n\n1. Brak zgłoszenia zastrzeżeń w terminie 7 dni roboczych od przekazania prac oznacza ich odbiór.\n\n## § 5. Licencja\n\n1. Wykonawca udziela Zamawiającemu niewyłącznej, nieograniczonej terytorialnie licencji na korzystanie z dostarczonego oprogramowania na polach eksploatacji wskazanych w zamówieniu.\n\n## § 6. Kary umowne\n\n1. W przypadku zwłoki Wykonawca zapłaci karę umowną w wysokości 1% wynagrodzenia za zamówienie za każdy dzień zwłoki, nie więcej jednak niż 15% tego wynagrodzenia.\n\n## § 7. Siła wyższa\n\n1. Strony nie odpowiadają za niewykonanie Umowy spowodowane siłą wyższą.\n\n## § 8. Odpowiedzialność\n\n1. Wykonawca odpowiada za szkody rzeczywiste wyrządzone Zamawiającemu, z wyłączeniem utraconych korzyści.\n\n## § 9. Wypowiedzenie\n\n1. Każda ze Stron może wypowiedzieć Umowę z zachowaniem 1-miesięcznego okresu wypowiedzenia.\n\n## § 10. Prawo właściwe\n\n1. Do Umowy stosuje się prawo polskie.\n"},{"id":"pl-hosting-gdpr-no-governing-law","title":"Hosting danych medycznych: brak ról RODO, brak klauzuli prawa właściwego","language":"pl","notes":"Synthetic seed case. Section 4 caps liability with 'jest ograniczona do kwoty', a common and valid phrasing; section 5 caps penalties. Neither should be flagged.","status":"synthetic_unreviewed","sections":{"2":{"category":"sla"},"3":{"category":"payment"},"4":{"category":"liability"},"5":{"category":"penalties"},"7":{"category":"gdpr"},"8":{"category":"termination"},"9":{"category":"dispute_resolution"}},"expected_issues":[{"code":"GDPR_ROLES_UNCLEAR","section":"7","why":"Personal (health-adjacent) data is processed but controller and processor roles and an Art. 28 entrustment are not set out."},{"code":"GOVERNING_LAW_UNCLEAR","section":"document","why":"There is no governing-law clause at all; the jurisdiction clause only picks a court."}],"contract":"# UMOWA O ŚWIADCZENIE USŁUG HOSTINGU I ADMINISTRACJI\n\nzawarta pomiędzy Epsilon Med sp. z o.o. („Usługobiorca”) a Zeta Cloud sp. z o.o. („Usługodawca”).\n\n## § 1. Przedmiot umowy\n\n1. Usługodawca świadczy usługi hostingu aplikacji Usługobiorcy oraz administracji serwerami.\n\n## § 2. Poziom usług\n\n1. Usługodawca zapewnia dostępność usług na poziomie 99,9% w skali miesiąca kalendarzowego.\n\n## § 3. Wynagrodzenie\n\n1. Miesięczne wynagrodzenie wynosi 9 500 zł netto.\n\n2. Faktury płatne są w terminie 21 dni od daty ich otrzymania.\n\n## § 4. Odpowiedzialność\n\n1. Odpowiedzialność Usługodawcy za szkody wynikające z niewykonania lub nienależytego wykonania Umowy jest ograniczona do kwoty 100 000 zł.\n\n## § 5. Kary umowne\n\n1. Za każdy pełny punkt procentowy poniżej gwarantowanej dostępności Usługodawca zapłaci karę umowną w wysokości 5% wynagrodzenia miesięcznego.\n\n2. Łączna wysokość kar umownych w danym miesiącu nie przekroczy 30% wynagrodzenia miesięcznego.\n\n## § 6. Bezpieczeństwo\n\n1. Usługodawca stosuje środki bezpieczeństwa zgodne z normą ISO/IEC 27001 i niezwłocznie informuje Usługobiorcę o incydentach.\n\n## § 7. Dane osobowe\n\n1. Usługodawca będzie przetwarzał dane osobowe zgodnie z przepisami RODO.\n\n## § 8. Wypowiedzenie\n\n1. Umowa może zostać wypowiedziana przez każdą ze Stron z zachowaniem 3 miesięcy okresu wypowiedzenia.\n\n## § 9. Spory\n\n1. Spory wynikające z Umowy rozstrzyga sąd właściwy dla siedziby Usługobiorcy.\n"},{"id":"pl-implementation-vague-ip","title":"Wdrożenie e-commerce: niejasne prawa do oprogramowania, milczący odbiór bez terminu, brak terminu płatności","language":"pl","notes":"Synthetic seed case. Section 9 uses 'prawu polskiemu' (dative) on purpose: the governing law is clear, so no finding is expected there.","status":"synthetic_unreviewed","sections":{"4":{"category":"payment"},"5":{"category":"acceptance"},"6":{"category":"intellectual_property"},"7":{"category":"liability"},"8":{"category":"termination"},"9":{"category":"governing_law"}},"expected_issues":[{"code":"PAYMENT_TERM_MISSING","section":"4","why":"Payment is tied to invoices and milestones but no payment deadline is set."},{"code":"DEEMED_ACCEPTANCE_WITHOUT_CLEAR_PERIOD","section":"5","why":"Silence counts as acceptance, but no period is set for raising objections."},{"code":"IP_ALLOCATION_UNCLEAR","section":"6","why":"'May use' neither transfers copyright nor grants a licence with fields of exploitation."}],"contract":"# UMOWA WDROŻENIOWA\n\nzawarta pomiędzy Gamma Retail S.A. („Zamawiający”) a Delta IT sp. z o.o. („Wykonawca”).\n\n## § 1. Przedmiot umowy\n\n1. Wykonawca zobowiązuje się do wdrożenia u Zamawiającego platformy e-commerce, obejmującego konfigurację, integrację z systemem ERP oraz szkolenie użytkowników.\n\n## § 2. Harmonogram\n\n1. Wdrożenie zostanie zrealizowane w trzech etapach określonych w Załączniku nr 1.\n\n## § 3. Obowiązki Zamawiającego\n\n1. Zamawiający zapewni Wykonawcy dostęp do środowiska testowego oraz wyznaczy osobę do kontaktu.\n\n## § 4. Wynagrodzenie\n\n1. Łączne wynagrodzenie za wdrożenie wynosi 240 000 zł netto, płatne w trzech równych częściach po odbiorze każdego etapu.\n\n2. Wynagrodzenie płatne jest na podstawie faktury wystawionej przez Wykonawcę.\n\n## § 5. Odbiór\n\n1. Po zakończeniu każdego etapu Wykonawca zgłasza gotowość do odbioru.\n\n2. W przypadku braku zastrzeżeń ze strony Zamawiającego etap uznaje się za odebrany.\n\n## § 6. Prawa do oprogramowania\n\n1. Zamawiający może korzystać z platformy oraz z modyfikacji wykonanych przez Wykonawcę w ramach Umowy.\n\n## § 7. Odpowiedzialność\n\n1. Całkowita odpowiedzialność Wykonawcy z tytułu Umowy nie przekroczy kwoty łącznego wynagrodzenia określonego w § 4.\n\n2. Ograniczenie nie dotyczy szkód wyrządzonych umyślnie.\n\n## § 8. Wypowiedzenie\n\n1. Każda ze Stron może wypowiedzieć Umowę z zachowaniem 30 dni okresu wypowiedzenia.\n\n## § 9. Prawo właściwe\n\n1. Umowa podlega prawu polskiemu.\n"},{"id":"pl-maintenance-unlimited-liability","title":"Utrzymanie systemu WMS: nieograniczona odpowiedzialność, kary bez limitu, wypowiedzenie bez okresu","language":"pl","notes":"Synthetic seed case. Problems were planted deliberately; a qualified lawyer must confirm the annotation is exhaustive before status becomes lawyer_reviewed.","status":"synthetic_unreviewed","sections":{"4":{"category":"payment"},"5":{"category":"acceptance"},"6":{"category":"intellectual_property"},"7":{"category":"liability"},"8":{"category":"penalties"},"9":{"category":"gdpr"},"10":{"category":"termination"}},"expected_issues":[{"code":"LIABILITY_CAP_MISSING_OR_UNCLEAR","section":"7","why":"Liability is expressly unlimited in amount."},{"code":"PENALTY_CAP_MISSING","section":"8","why":"Two uncapped penalty mechanisms (per hour and per day) with no aggregate cap, plus supplementary damages."},{"code":"TERMINATION_NOTICE_UNCLEAR","section":"10","why":"The client may terminate an open-ended contract at any time with no notice period."}],"contract":"# UMOWA O ŚWIADCZENIE USŁUG UTRZYMANIA SYSTEMU INFORMATYCZNEGO\n\nzawarta w Warszawie pomiędzy Alfa Logistics sp. z o.o. („Zamawiający”) a Beta Software sp. z o.o. („Wykonawca”), zwanymi dalej łącznie „Stronami”.\n\n## § 1. Definicje\n\n1. System oznacza system magazynowy WMS eksploatowany przez Zamawiającego.\n\n2. Zgłoszenie oznacza informację o nieprawidłowym działaniu Systemu przekazaną przez Zamawiającego.\n\n## § 2. Przedmiot umowy\n\n1. Przedmiotem Umowy jest świadczenie przez Wykonawcę usług utrzymania i rozwoju Systemu.\n\n2. Szczegółowy zakres usług określa Załącznik nr 1.\n\n## § 3. Poziom usług (SLA)\n\n1. Wykonawca zapewnia dostępność Systemu na poziomie 99,5% w skali miesiąca.\n\n2. Czas reakcji na Zgłoszenie krytyczne wynosi 2 godziny.\n\n## § 4. Wynagrodzenie i płatności\n\n1. Z tytułu świadczenia usług Zamawiający zapłaci Wykonawcy wynagrodzenie ryczałtowe w wysokości 18 000 zł netto miesięcznie.\n\n2. Wynagrodzenie płatne jest w terminie 14 dni od dnia doręczenia prawidłowo wystawionej faktury.\n\n## § 5. Odbiór prac rozwojowych\n\n1. Prace rozwojowe podlegają odbiorowi na podstawie protokołu odbioru.\n\n2. Jeżeli Zamawiający nie zgłosi zastrzeżeń w terminie 5 dni roboczych od udostępnienia prac, prace uznaje się za odebrane.\n\n## § 6. Prawa autorskie\n\n1. Z chwilą zapłaty wynagrodzenia Wykonawca udziela Zamawiającemu niewyłącznej licencji na korzystanie z oprogramowania wytworzonego w ramach prac rozwojowych, bez ograniczeń terytorialnych, na czas nieoznaczony, na polach eksploatacji wskazanych w Załączniku nr 2.\n\n## § 7. Odpowiedzialność\n\n1. Wykonawca ponosi pełną odpowiedzialność za wszelkie szkody wyrządzone Zamawiającemu w związku z wykonywaniem Umowy, bez ograniczeń co do ich wysokości.\n\n## § 8. Kary umowne\n\n1. Za każdą godzinę przekroczenia czasu reakcji na Zgłoszenie krytyczne Wykonawca zapłaci karę umowną w wysokości 500 zł.\n\n2. Za każdy dzień zwłoki w wykonaniu prac rozwojowych Wykonawca zapłaci karę umowną w wysokości 0,5% wynagrodzenia miesięcznego.\n\n3. Zamawiający może dochodzić odszkodowania przewyższającego wysokość kar umownych.\n\n## § 9. Ochrona danych osobowych\n\n1. Zamawiający jako administrator danych powierza Wykonawcy jako procesorowi przetwarzanie danych osobowych pracowników Zamawiającego w zakresie niezbędnym do świadczenia usług, na zasadach określonych w odrębnej umowie powierzenia.\n\n## § 10. Czas trwania i rozwiązanie umowy\n\n1. Umowa zostaje zawarta na czas nieoznaczony.\n\n2. Zamawiający może wypowiedzieć Umowę w każdym czasie.\n\n## § 11. Postanowienia końcowe\n\n1. Umowa podlega prawu polskiemu, a w sprawach nieuregulowanych stosuje się przepisy Kodeksu cywilnego.\n\n2. Spory rozstrzyga sąd właściwy dla siedziby Zamawiającego.\n"},{"id":"pl-well-drafted-services","title":"Usługi programistyczne T&M: umowa poprawnie zredagowana (brak oczekiwanych ustaleń)","language":"pl","notes":"Synthetic control case: every scored topic is drafted adequately in ordinary Polish legal phrasing (ograniczona do, przenosi autorskie prawa majątkowe, podmiot przetwarzający, trzymiesięczny okres). Any finding here is a false alarm.","status":"synthetic_unreviewed","sections":{"2":{"category":"payment"},"3":{"category":"acceptance"},"4":{"category":"intellectual_property"},"5":{"category":"liability"},"6":{"category":"penalties"},"7":{"category":"gdpr"},"8":{"category":"termination"}},"expected_issues":[],"contract":"# UMOWA O ŚWIADCZENIE USŁUG PROGRAMISTYCZNYCH\n\nzawarta pomiędzy Eta Finance S.A. („Zamawiający”) a Theta Dev sp. z o.o. („Wykonawca”).\n\n## § 1. Przedmiot umowy\n\n1. Wykonawca będzie świadczył na rzecz Zamawiającego usługi programistyczne w modelu time and material, na podstawie zleceń składanych przez Zamawiającego.\n\n## § 2. Wynagrodzenie i płatności\n\n1. Wynagrodzenie stanowi iloczyn liczby przepracowanych godzin i stawki 190 zł netto za godzinę.\n\n2. Wynagrodzenie płatne jest w terminie 30 dni od dnia doręczenia Zamawiającemu prawidłowo wystawionej faktury VAT.\n\n## § 3. Odbiór\n\n1. Zamawiający dokonuje odbioru rezultatów zlecenia w terminie 10 dni roboczych od ich przekazania.\n\n2. Brak zgłoszenia zastrzeżeń w tym terminie oznacza odbiór rezultatów bez zastrzeżeń.\n\n## § 4. Prawa autorskie\n\n1. Z chwilą zapłaty wynagrodzenia za dane zlecenie Wykonawca przenosi na Zamawiającego autorskie prawa majątkowe do utworów powstałych w jego ramach, na polach eksploatacji określonych w Załączniku nr 2.\n\n## § 5. Odpowiedzialność\n\n1. Całkowita odpowiedzialność Wykonawcy z tytułu Umowy jest ograniczona do wysokości wynagrodzenia zapłaconego w okresie 12 miesięcy poprzedzających zdarzenie wyrządzające szkodę.\n\n2. Ograniczenie nie dotyczy szkód wyrządzonych umyślnie.\n\n## § 6. Kary umowne\n\n1. Za każdy dzień zwłoki w przekazaniu rezultatów zlecenia Wykonawca zapłaci karę umowną w wysokości 0,2% wartości zlecenia.\n\n2. Łączna wysokość kar umownych nie przekroczy 10% wynagrodzenia za dane zlecenie.\n\n## § 7. Ochrona danych osobowych\n\n1. Zamawiający jako administrator powierza Wykonawcy jako podmiotowi przetwarzającemu przetwarzanie danych osobowych klientów Zamawiającego na zasadach określonych w umowie powierzenia przetwarzania stanowiącej Załącznik nr 3, zgodnie z art. 28 RODO.\n\n## § 8. Rozwiązanie umowy\n\n1. Każda ze Stron może wypowiedzieć Umowę z zachowaniem trzymiesięcznego okresu wypowiedzenia ze skutkiem na koniec miesiąca kalendarzowego.\n\n## § 9. Prawo właściwe i spory\n\n1. Umowa podlega prawu polskiemu.\n\n2. Spory rozstrzyga sąd powszechny właściwy dla siedziby Zamawiającego.\n"},{"id":"en-development-convenience-termination","title":"Software development (English): uncapped liquidated damages, deemed acceptance without period, termination for convenience without notice","language":"en","notes":"Synthetic seed case. Section 10 says 'governed by Polish law', which is clear, so no governing-law finding is expected.","status":"synthetic_unreviewed","sections":{"3":{"category":"fees"},"5":{"category":"acceptance"},"6":{"category":"intellectual_property"},"7":{"category":"penalties"},"8":{"category":"liability"},"9":{"category":"warranty"},"10":{"category":"governing_law"},"11":{"category":"termination"}},"expected_issues":[{"code":"DEEMED_ACCEPTANCE_WITHOUT_CLEAR_PERIOD","section":"5","why":"Silence is acceptance but no rejection period is defined."},{"code":"PENALTY_CAP_MISSING","section":"7","why":"Daily liquidated damages have no aggregate cap."},{"code":"TERMINATION_NOTICE_UNCLEAR","section":"11","why":"Termination for convenience with no notice period."}],"contract":"# SOFTWARE DEVELOPMENT AGREEMENT\n\nThis Agreement is made between Nu Mobility S.A. (the \"Customer\") and Xi Labs sp. z o.o. (the \"Developer\").\n\n## 1. Scope\n\n1.1 The Developer shall design and develop a mobile application in accordance with the specification in Schedule 1.\n\n## 2. Project Plan\n\n2.1 The work shall be delivered in milestones set out in Schedule 2.\n\n## 3. Fees\n\n3.1 The Customer shall pay a fixed price of EUR 85,000, split by milestone.\n\n3.2 Invoices are payable within 14 days of the invoice date.\n\n## 4. Change Requests\n\n4.1 Changes to the specification require a written change request signed by both parties.\n\n## 5. Acceptance\n\n5.1 The Developer shall deliver each milestone for acceptance testing.\n\n5.2 If the Customer does not reject a milestone, it shall be deemed accepted.\n\n## 6. Intellectual Property\n\n6.1 The Developer hereby assigns to the Customer all copyright in the application upon payment of each milestone.\n\n## 7. Delay\n\n7.1 If a milestone is delayed, the Developer shall pay liquidated damages of 0.5% of the fixed price for each day of delay.\n\n## 8. Limitation of Liability\n\n8.1 Each party's total liability under this Agreement shall not exceed the fixed price.\n\n## 9. Warranty\n\n9.1 The Developer warrants that the application will materially conform to the specification for 90 days after final acceptance.\n\n## 10. Governing Law\n\n10.1 This Agreement is governed by Polish law.\n\n## 11. Termination\n\n11.1 Either party may terminate this Agreement for convenience.\n"},{"id":"en-managed-services-vague-terms","title":"Managed services (English): no payment deadline, vague software rights, no GDPR roles","language":"en","notes":"Synthetic seed case. Service credits in section 5 are capped at 25%. Section 6 lets the customer 'use' tools during the term without a licence grant.","status":"synthetic_unreviewed","sections":{"2":{"category":"sla"},"4":{"category":"payment"},"6":{"category":"intellectual_property"},"7":{"category":"liability"},"8":{"category":"gdpr"},"9":{"category":"term"},"10":{"category":"governing_law"}},"expected_issues":[{"code":"PAYMENT_TERM_MISSING","section":"4","why":"Monthly charges are payable but no payment deadline is set anywhere."},{"code":"IP_ALLOCATION_UNCLEAR","section":"6","why":"'May use' gives no licence scope, fields of use or term-end terms."},{"code":"GDPR_ROLES_UNCLEAR","section":"8","why":"Employee personal data is processed without stating controller/processor roles or an Art. 28 agreement."}],"contract":"# MANAGED SERVICES AGREEMENT\n\nThis Agreement is made between Omicron Insurance S.A. (the \"Customer\") and Pi Managed IT sp. z o.o. (the \"Provider\").\n\n## 1. Services\n\n1.1 The Provider shall provide managed workplace services, including service desk and endpoint management, as described in Schedule 1.\n\n## 2. Service Levels\n\n2.1 The Provider shall meet the service levels in Schedule 3, including 99.8% availability of the service desk.\n\n## 3. Customer Obligations\n\n3.1 The Customer shall give the Provider remote access to the managed endpoints.\n\n## 4. Charges\n\n4.1 The Customer shall pay the monthly charges set out in Schedule 2.\n\n## 5. Service Credits\n\n5.1 If availability falls below the agreed level, the Provider shall grant a service credit of 5% of the monthly charges for each full percentage point of shortfall, up to a maximum of 25% of the monthly charges.\n\n## 6. Software and Tools\n\n6.1 The Customer may use the Provider's monitoring software during the term.\n\n## 7. Liability\n\n7.1 Each party's aggregate liability in any contract year shall not exceed the charges paid in the twelve months preceding the claim.\n\n## 8. Personal Data\n\n8.1 The Provider shall comply with the GDPR when handling personal data of the Customer's employees.\n\n## 9. Term\n\n9.1 This Agreement has an initial term of 36 months. Either party may terminate it by giving 6 months' written notice expiring at the end of the initial term or at any time thereafter.\n\n## 10. Law and Jurisdiction\n\n10.1 This Agreement shall be governed by and construed in accordance with the laws of Poland, and the courts of Warsaw shall have exclusive jurisdiction.\n"},{"id":"en-services-unlimited-liability","title":"IT services (English): unlimited supplier liability","language":"en","notes":"Synthetic seed case. Section 5 allocates ownership with 'shall vest in the Customer', which is clear, so no IP finding is expected.","status":"synthetic_unreviewed","sections":{"3":{"category":"payment"},"4":{"category":"acceptance"},"5":{"category":"intellectual_property"},"6":{"category":"gdpr"},"7":{"category":"confidentiality"},"8":{"category":"termination"},"9":{"category":"liability"},"10":{"category":"governing_law"}},"expected_issues":[{"code":"LIABILITY_CAP_MISSING_OR_UNCLEAR","section":"9","why":"Supplier liability is expressly unlimited."}],"contract":"# IT SERVICES AGREEMENT\n\nThis Agreement is made between Lambda Pharma sp. z o.o. (the \"Customer\") and Mu Consulting Ltd (the \"Supplier\").\n\n## 1. Definitions\n\n1.1 \"Deliverables\" means all software, documentation and other materials produced by the Supplier under this Agreement.\n\n## 2. Services\n\n2.1 The Supplier shall provide application development and support services as described in Schedule 1.\n\n## 3. Fees and Payment\n\n3.1 The Customer shall pay the fees set out in Schedule 2.\n\n3.2 Invoices are payable within 30 days of receipt.\n\n## 4. Acceptance\n\n4.1 The Customer shall test each Deliverable within 10 business days of delivery and either accept it or notify the Supplier of defects.\n\n## 5. Intellectual Property\n\n5.1 All intellectual property rights in the Deliverables shall vest in the Customer upon payment of the relevant fees.\n\n## 6. Data Protection\n\n6.1 The Supplier acts as processor on behalf of the Customer as controller and shall process personal data only on the Customer's documented instructions, in accordance with Article 28 GDPR.\n\n## 7. Confidentiality\n\n7.1 Each party shall keep the other party's confidential information secret for the term of this Agreement and five years thereafter.\n\n## 8. Term and Termination\n\n8.1 This Agreement continues until terminated by either party upon 60 days' written notice.\n\n## 9. Liability\n\n9.1 The Supplier shall have unlimited liability for any loss or damage arising out of or in connection with this Agreement.\n\n## 10. Governing Law\n\n10.1 This Agreement is governed by the laws of Poland.\n"}];</script>
 <script>
 (() => {
+  "use strict";
   const core = window.SmartLegalCore;
   const samples = window.SMARTLEGAL_SAMPLES || [];
-  const $ = (id) => document.getElementById(id);
+  const view = document.getElementById("view");
+  const stepsEl = document.getElementById("steps");
 
-  const CODE_LABELS = {
-    LIABILITY_CAP_MISSING_OR_UNCLEAR: "Liability cap missing or unclear",
-    PAYMENT_TERM_MISSING: "Payment deadline missing",
-    TERMINATION_NOTICE_UNCLEAR: "Termination notice unclear",
-    IP_ALLOCATION_UNCLEAR: "IP transfer or licence unclear",
-    GDPR_ROLES_UNCLEAR: "GDPR roles unclear",
-    PENALTY_CAP_MISSING: "No cap on contractual penalties",
-    GOVERNING_LAW_UNCLEAR: "Governing law unclear",
-    DEEMED_ACCEPTANCE_WITHOUT_CLEAR_PERIOD: "Deemed acceptance without a deadline",
-    UNCLASSIFIED_LONG_CLAUSE: "Long clause not classified"
+  const PRIORITY = { high: "High priority", medium: "Medium priority", low: "Low priority" };
+  const RANK = { high: 0, medium: 1, low: 2 };
+
+  // Short English names for the example contracts (the stored titles are in Polish or English legal wording).
+  const EXAMPLE_NAMES = {
+    "pl-framework-lost-profits-only": "Framework agreement: lost profits excluded, no cap",
+    "pl-hosting-gdpr-no-governing-law": "Medical data hosting: no data protection roles, no governing law",
+    "pl-implementation-vague-ip": "E-commerce setup: unclear ownership, no payment deadline",
+    "pl-maintenance-unlimited-liability": "System maintenance: unlimited liability and penalties",
+    "pl-well-drafted-services": "Software development: a well-drafted contract",
+    "en-development-convenience-termination": "Software development: penalties and termination",
+    "en-managed-services-vague-terms": "Managed services: unclear payment and ownership",
+    "en-services-unlimited-liability": "IT services: unlimited liability"
   };
-  const CATEGORY_LABELS = {
-    parties: "parties", definitions: "definitions", subject: "subject", scope: "scope", acceptance: "acceptance",
-    payment: "payment", fees: "fees", term: "term", termination: "termination", liability: "liability", warranty: "warranty",
-    indemnity: "indemnity", penalties: "penalties", intellectual_property: "intellectual property", confidentiality: "confidentiality",
-    gdpr: "data protection", security: "security", subcontracting: "subcontracting", non_compete: "non-compete",
-    non_solicitation: "non-solicitation", sla: "service levels", force_majeure: "force majeure", governing_law: "governing law",
-    dispute_resolution: "disputes", assignment: "assignment", notices: "notices", miscellaneous: "final provisions", unknown: "not classified"
-  };
-  // What the pipeline's test adapters return today (src/smartlegal-contract-review/fixture-profile.ts).
-  const FIXTURE = {
-    citation: { label: "Fixture official legal source", title: "Fixture official legal source for canonical E2E", section: "§ fixture", version: "fixture-v1", publisher: "Canonical E2E fixture authority", effective: "2026-08-22", quote: "Fixture legal proposition used only to prove evidence-bound orchestration." },
-    analysis: { conclusion: "The tested liability wording creates uncapped contractual exposure.", risk: "Potential disproportionate exposure requires qualified legal review.", recommendation: "Introduce an explicit negotiated liability cap subject to human legal approval.", confidence: 0.9 },
-    amendment: { text: "Łączna odpowiedzialność Wykonawcy jest ograniczona do uzgodnionego limitu, z wyjątkami zatwierdzonymi przez kwalifikowanego prawnika.", reason: "Introduce an explicit liability cap while preserving mandatory human legal review.", riskAfter: "medium" }
-  };
+  const exampleName = (s) => EXAMPLE_NAMES[s.id] || s.title;
+  const DEFAULT_EXAMPLE = Math.max(0, samples.findIndex((s) => s.id === "pl-maintenance-unlimited-liability"));
 
-  const STEPS = [
-    { id: "p11", num: "P1.1", name: "Intake", kind: "real" },
-    { id: "p12", num: "P1.2", name: "Clauses", kind: "real" },
-    { id: "p13", num: "P1.3", name: "Issues", kind: "real" },
-    { id: "p14", num: "P1.4", name: "Research", kind: "placeholder" },
-    { id: "p15", num: "P1.5", name: "Analysis", kind: "placeholder" },
-    { id: "p16", num: "P1.6", name: "Amendments", kind: "placeholder" },
-    { id: "p17", num: "P1.7", name: "Lawyer review", kind: "lawyer" },
-    { id: "p18", num: "P1.8", name: "Redline", kind: "demo" },
-    { id: "p19", num: "P1.9", name: "Final review", kind: "lawyer" },
-    { id: "prov", num: "P1 ✓", name: "Provenance", kind: "demo" }
-  ];
-  const KIND_TAG = { real: ["real", "Real code"], placeholder: ["placeholder", "Placeholder"], lawyer: ["lawyer", "Lawyer checkpoint"], demo: ["demo", "Demo rendering"] };
-
-  const state = { sampleIndex: 0, analysis: null, sample: null, outcomes: null, findings: [], step: "p13", p17: null, p19: null, error: null };
-
-  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const pct = (n, d) => (d === 0 ? "n/a" : `${Math.round((100 * n) / d)}%`);
-  const short = (hash) => `${hash.slice(0, 12)}…${hash.slice(-6)}`;
-  const tag = (kind) => `<span class="tag ${KIND_TAG[kind][0]}">${KIND_TAG[kind][1]}</span>`;
-  const sectionName = (section) => (section === "preamble" ? "Preamble" : section === "document" ? "Whole contract" : `§ ${section}`);
-
-  // ---------- samples ----------
-  function fillSamples() {
-    const select = $("sample");
-    select.innerHTML = samples.map((s, i) => `<option value="${i}">${s.language.toUpperCase()} · ${esc(s.title)}</option>`).join("") + `<option value="custom">Your own text (paste below)</option>`;
-  }
-  function loadSample(index) {
-    if (index === "custom") {
-      state.sampleIndex = "custom";
-      $("sample-note").textContent = "Paste a contract. Without a lawyer's expected findings, the case file shows what the system found but cannot score it.";
-      $("contract").value = "";
-      $("contract").focus();
-      return;
+  // Plain-language text for each kind of finding. Written for someone who is not a lawyer.
+  const COPY = {
+    LIABILITY_CAP_MISSING_OR_UNCLEAR: {
+      title: "Unlimited or unclear liability",
+      meaning: "The contract does not clearly limit how much one party must pay if something goes wrong. Without a limit, the possible cost may have no ceiling.",
+      ask: "Ask whether the contract should set a maximum amount, and what that amount should be."
+    },
+    PENALTY_CAP_MISSING: {
+      title: "Penalties without a maximum",
+      meaning: "Penalties, such as fines for late delivery, have no clear upper limit.",
+      ask: "Ask whether penalties should be capped, and at what level."
+    },
+    PAYMENT_TERM_MISSING: {
+      title: "No clear payment deadline",
+      meaning: "The contract does not say clearly when payment is due.",
+      ask: "Ask for a fixed deadline, for example a number of days after the invoice date."
+    },
+    TERMINATION_NOTICE_UNCLEAR: {
+      title: "Unclear notice to end the contract",
+      meaning: "It is not clear how much notice is needed to end the contract.",
+      ask: "Ask for a specific notice period that applies to both sides."
+    },
+    DEEMED_ACCEPTANCE_WITHOUT_CLEAR_PERIOD: {
+      title: "Work accepted automatically",
+      meaning: "Work may be treated as accepted without anyone saying so, and there is no clear time limit to report problems.",
+      ask: "Ask for a fixed review period and a clear way to report problems."
+    },
+    IP_ALLOCATION_UNCLEAR: {
+      title: "Unclear ownership of the work",
+      meaning: "It is not clear who owns the software or other work created under the contract, or what rights each side gets.",
+      ask: "Ask who owns the work and what each side is allowed to do with it."
+    },
+    GDPR_ROLES_UNCLEAR: {
+      title: "Unclear responsibility for personal data",
+      meaning: "It is not clear which party is responsible for personal data under data protection rules.",
+      ask: "Ask which party controls the data and which one processes it, and how this is written down."
+    },
+    GOVERNING_LAW_UNCLEAR: {
+      title: "Unclear governing law",
+      meaning: "It is not clear which country's law applies to the contract.",
+      ask: "Ask for a clear sentence stating which country's law applies."
+    },
+    UNCLASSIFIED_LONG_CLAUSE: {
+      title: "Long clause to read",
+      meaning: "This is a long clause that the checker could not place in a known category.",
+      ask: "Read it carefully, or ask a lawyer to read it with you."
     }
-    const sample = samples[index];
-    state.sampleIndex = index;
-    $("sample-note").textContent = `${sample.expected_issues.length} expected finding${sample.expected_issues.length === 1 ? "" : "s"} planted. ${sample.notes}`;
-    $("contract").value = sample.contract;
+  };
+  const FALLBACK = { title: "Something to look at", meaning: "The checker noticed wording that may need a closer look.", ask: "Read this part and ask a lawyer if you are unsure." };
+
+  const PLACEHOLDER_WORDING = "[Proposed wording to be drafted by a qualified lawyer. This demo does not write contract text.]";
+  const STEP_LABELS = ["Choose", "Review", "Changes", "Lawyer", "Finish"];
+
+  const state = {
+    step: 1,
+    choice: samples.length ? String(DEFAULT_EXAMPLE) : "own",
+    pasted: "",
+    error: "",
+    analysis: null,
+    sourceTitle: "",
+    findings: [],
+    lawyer: { name: "", role: "Lawyer", checked: false, confirmed: false, at: "" },
+    ack1: false,
+    ack2: false,
+    log: []
+  };
+
+  function h(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  // ---------- run ----------
-  function run() {
-    const text = $("contract").value;
-    state.error = null;
-    if (!text.trim()) { state.error = "Paste a contract or pick a sample first."; render(); return; }
-    try {
-      const sample = state.sampleIndex === "custom" ? null : samples[state.sampleIndex];
-      const usingSample = sample && text.replace(/\r\n?/g, "\n").trim() === sample.contract.trim();
-      const analysis = core.analyzeContract(text, usingSample ? `${sample.id}.md` : "pasted-contract.md");
-      state.analysis = analysis;
-      state.sample = usingSample ? sample : null;
-      state.outcomes = usingSample ? core.scoreAgainstExpected(analysis, sample.expected_issues, sample.id) : null;
-      state.findings = buildFindings(analysis);
-      state.p17 = null; state.p19 = null;
-      state.step = "p13";
-      $("case-sub").textContent = usingSample ? sample.id : "Your contract";
-    } catch (error) {
-      state.error = `The contract could not be processed: ${error && error.message ? error.message : error}`;
-      state.analysis = null;
-    }
-    render();
+  function stamp() {
+    return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   }
 
-  // One finding per issue code and section, as the gold-set scoring counts them.
+  function logEvent(text) {
+    state.log.push({ time: stamp(), text });
+  }
+
+  function quote(text) {
+    const clean = (text || "").trim();
+    return clean || "No text found for this part.";
+  }
+
+  function sectionLabel(section) {
+    if (!section || section === "preamble") return "Introduction";
+    return /^\d/.test(section) ? `Section ${section}` : section;
+  }
+
+  function severityOf(issue) {
+    return PRIORITY[issue.severity] ? issue.severity : "medium";
+  }
+
+  // One finding per kind of issue and section, highest priority first.
   function buildFindings(analysis) {
     const clauses = new Map(analysis.structure.clauses.map((c) => [c.clause_id, c]));
-    const bySection = new Map();
+    const seen = new Map();
     for (const issue of analysis.report.issues) {
       const section = analysis.sections[issue.clause_id] || "preamble";
       const key = `${issue.code}|${section}`;
-      if (!bySection.has(key)) bySection.set(key, { key, section, issue, clause: clauses.get(issue.clause_id), scored: core.scoredIssueCodes.includes(issue.code) });
+      if (seen.has(key)) continue;
+      const copy = COPY[issue.code] || FALLBACK;
+      seen.set(key, {
+        key,
+        code: issue.code,
+        title: copy.title,
+        meaning: copy.meaning,
+        ask: copy.ask,
+        severity: severityOf(issue),
+        needsLawyer: Boolean(issue.requires_legal_research),
+        section,
+        clauseText: clauses.get(issue.clause_id) ? clauses.get(issue.clause_id).text : "",
+        reviewed: false
+      });
     }
-    return [...bySection.values()];
-  }
-  const proceeding = () => state.findings.filter((f) => f.scored);
-
-  // ---------- step state ----------
-  function stepState(id) {
-    if (!state.analysis) return "locked";
-    if (["p11", "p12", "p13", "p14", "p15", "p16"].includes(id)) return "done";
-    if (id === "p17") return state.p17 ? "done" : "waiting";
-    if (id === "p18") return state.p17 ? "done" : "locked";
-    if (id === "p19") return !state.p17 ? "locked" : state.p19 ? "done" : "waiting";
-    if (id === "prov") return state.p19 ? "done" : "locked";
-    return "locked";
+    return [...seen.values()].sort((a, b) => RANK[a.severity] - RANK[b.severity]);
   }
 
-  function renderDocket() {
-    $("docket").innerHTML = STEPS.map((s) => `
-      <button class="step" role="tab" type="button" data-step="${s.id}" data-kind="${s.kind}" data-state="${stepState(s.id)}" aria-selected="${state.step === s.id}" aria-controls="stage">
-        <span class="num">${s.num}</span><span class="name">${s.name}</span><span class="state" aria-hidden="true"></span>
-      </button>`).join("");
+  function renderSteps() {
+    stepsEl.innerHTML = STEP_LABELS.map((label, i) => {
+      const n = i + 1;
+      const cls = n === state.step ? "current" : n < state.step ? "done" : "";
+      const current = n === state.step ? ' aria-current="step"' : "";
+      const inner = `<span class="num" aria-hidden="true">${n < state.step ? "✓" : n}</span><span>${h(label)}</span>`;
+      const tag = n < state.step
+        ? `<button type="button" class="step" data-go="${n}">${inner}</button>`
+        : `<span class="step"${current}>${inner}</span>`;
+      return `<li class="${cls}">${tag}</li>`;
+    }).join("");
   }
 
-  function stageHead(step, title, text) {
-    return `<div class="stage-head"><div class="row"><span class="mono">${step.num}</span>${tag(step.kind)}</div><h2>${title}</h2><p>${text}</p></div>`;
+  function renderChoose() {
+    const cards = samples.map((s, i) => `
+      <label class="choice">
+        <input type="radio" name="contract" value="${i}" ${state.choice === String(i) ? "checked" : ""}>
+        <span><span class="choice-title">${h(exampleName(s))}</span>
+        <span class="choice-meta">${s.language === "pl" ? "Polish" : "English"} · Example contract</span></span>
+      </label>`).join("");
+    view.innerHTML = `
+      <h1 tabindex="-1">Which contract would you like to check?</h1>
+      <p class="lead">Pick an example to see how it works, or paste your own contract text.</p>
+      <fieldset>
+        <legend>Contract</legend>
+        ${cards}
+        <label class="choice">
+          <input type="radio" name="contract" value="own" ${state.choice === "own" ? "checked" : ""}>
+          <span><span class="choice-title">Paste my own text</span>
+          <span class="choice-meta">Plain text or Markdown</span></span>
+        </label>
+      </fieldset>
+      <div class="paste" id="pasteBox" ${state.choice === "own" ? "" : "hidden"}>
+        <label for="pasteText">Your contract text</label>
+        <textarea id="pasteText" rows="9" spellcheck="false">${h(state.pasted)}</textarea>
+        <p class="hint">The text stays in this browser tab.</p>
+      </div>
+      <p class="error" role="alert">${h(state.error)}</p>
+      <div class="actions">
+        <button type="button" class="btn primary" data-action="check">Check contract</button>
+      </div>
+      <p class="fine">The examples are made-up contracts for testing.</p>`;
   }
 
-  // ---------- stages ----------
-  const renderers = {
-    p11(step) {
-      const d = state.analysis.document;
-      const kinds = d.blocks.reduce((acc, b) => ((acc[b.kind] = (acc[b.kind] || 0) + 1), acc), {});
-      return stageHead(step, "Intake", "The text is turned into numbered blocks (title, headings, list items, paragraphs) by the same normalizer that reads Docling output from PDF and DOCX files.") + `
-        <div class="facts">
-          <div class="fact"><span class="v">${d.blocks.length}</span><span class="k">blocks</span></div>
-          <div class="fact"><span class="v">${kinds.heading || 0}</span><span class="k">section headings</span></div>
-          <div class="fact"><span class="v">${kinds.list_item || 0}</span><span class="k">numbered paragraphs</span></div>
-          <div class="fact"><span class="v">${kinds.paragraph || 0}</span><span class="k">plain paragraphs</span></div>
-        </div>
-        <dl class="kv">
-          <dt>Title</dt><dd>${esc(d.title || "none detected")}</dd>
-          <dt>Document ID</dt><dd class="mono">${esc(d.document_id)}</dd>
-          <dt>Source SHA-256</dt><dd class="mono">${esc(d.source.sha256)}</dd>
-          <dt>Parser</dt><dd>${esc(d.parser.name)} <span class="chip">${esc(d.parser.mode)}</span> stands in for Docling</dd>
-          <dt>Scope</dt><dd>Poland-law B2B IT services, Polish or English text</dd>
-        </dl>`;
-    },
-
-    p12(step) {
-      const { structure, report, sections } = state.analysis;
-      const category = new Map(report.classified_clauses.map((c) => [c.clause_id, c]));
-      // A heading clause made of its heading block alone, while its section has paragraphs of its own.
-      const headingOnly = structure.clauses.filter((c) => c.detection_method === "heading"
-        && c.start_block_sequence === c.end_block_sequence
-        && structure.clauses.some((other) => other !== c && sections[other.clause_id] === sections[c.clause_id]));
-      const groups = new Map();
-      for (const c of structure.clauses) {
-        const s = sections[c.clause_id] || "preamble";
-        if (!groups.has(s)) groups.set(s, []);
-        groups.get(s).push(c);
+  function runCheck() {
+    let text;
+    let name;
+    let title;
+    if (state.choice === "own") {
+      text = state.pasted.trim();
+      if (!text) {
+        state.error = "Paste some contract text first, then check it again.";
+        renderChoose();
+        focusHeading();
+        return;
       }
-      const methods = structure.clauses.reduce((acc, c) => ((acc[c.detection_method] = (acc[c.detection_method] || 0) + 1), acc), {});
-      return stageHead(step, "Clause extraction", "Each heading and each numbered paragraph starts a clause. Every clause is then classified by topic, which decides which checks run on it in P1.3.") + `
-        <div class="facts">
-          <div class="fact"><span class="v">${structure.clauses.length}</span><span class="k">clauses</span></div>
-          <div class="fact"><span class="v">${methods.heading || 0}</span><span class="k">from headings</span></div>
-          <div class="fact"><span class="v">${methods.numbered_text || 0}</span><span class="k">from numbered paragraphs</span></div>
-          <div class="fact ${headingOnly.length ? "warn" : ""}"><span class="v">${headingOnly.length}</span><span class="k">headings split from their text</span></div>
-        </div>
-        ${headingOnly.length ? `<p class="warn-note">Known problem, measured by the gold set: when paragraphs are numbered, a section heading becomes a clause with no text of its own, and its paragraphs lose the heading's context. Highlighted below.</p>` : ""}
-        <div class="list">${[...groups.entries()].map(([s, clauses]) => `
-          <div class="section-group">
-            <div class="section-title">${esc(sectionName(s))}</div>
-            ${clauses.map((c) => {
-              const cl = category.get(c.clause_id);
-              const isHeadingOnly = headingOnly.includes(c);
-              return `<div class="clause ${isHeadingOnly ? "heading-only" : ""}">
-                <div class="meta">${esc(c.number || "–")}</div>
-                <div class="body">
-                  <div class="text">${esc(c.text)}</div>
-                  <div class="tags"><span class="chip">${esc(c.detection_method.replace("_", " "))}</span><span class="chip">${esc(CATEGORY_LABELS[cl?.category] || cl?.category || "?")}${cl ? ` · ${Math.round(cl.confidence * 100)}%` : ""}</span>${isHeadingOnly ? `<span class="chip">heading only</span>` : ""}</div>
-                </div>
-              </div>`;
-            }).join("")}
-          </div>`).join("")}
-        </div>`;
-    },
-
-    p13(step) {
-      const findings = state.findings;
-      const outcomeByKey = new Map((state.outcomes || []).map((o) => [`${o.code}|${o.section}`, o]));
-      const scoredFindings = findings.filter((f) => f.scored);
-      const hints = findings.filter((f) => !f.scored);
-      let score = "";
-      if (state.outcomes) {
-        const found = state.outcomes.filter((o) => o.outcome === "found").length;
-        const missed = state.outcomes.filter((o) => o.outcome === "missed");
-        const fa = state.outcomes.filter((o) => o.outcome === "false_alarm").length;
-        score = `
-          <div class="facts">
-            <div class="fact good"><span class="v">${found} / ${found + missed.length}</span><span class="k">expected findings caught (${pct(found, found + missed.length)})</span></div>
-            <div class="fact ${missed.length ? "warn" : ""}"><span class="v">${missed.length}</span><span class="k">missed</span></div>
-            <div class="fact ${fa ? "bad" : ""}"><span class="v">${fa}</span><span class="k">false alarms</span></div>
-            <div class="fact"><span class="v">${pct(found, found + fa)}</span><span class="k">of raised findings were right</span></div>
-          </div>
-          ${missed.length ? `<div class="missed-list"><h3>Missed by the system</h3>${missed.map((o) => `
-            <div class="missed"><div class="tags"><span class="outcome missed">Missed</span><strong>${esc(CODE_LABELS[o.code])}</strong><span class="chip">${esc(sectionName(o.section))}</span></div><p class="why">${esc(o.why || "")}</p></div>`).join("")}</div>` : ""}`;
-      } else {
-        score = `<p class="warn-note">Your own text has no lawyer's expected findings, so these results cannot be scored. Pick a sample to see found, missed and false alarms.</p>`;
-      }
-      return stageHead(step, "Issue spotting", "Deterministic rules check each classified clause for eight problems typical of Polish B2B IT contracts. Each finding names the section and gives the rule's reason, in Polish, as the product does.") + score + `
-        <h3>Findings raised (${scoredFindings.length})</h3>
-        <div class="list">${scoredFindings.length ? scoredFindings.map((f) => {
-          const o = outcomeByKey.get(f.key);
-          const outcome = o ? o.outcome : null;
-          return `<article class="card ${outcome ? `is-${outcome}` : ""}">
-            <div class="tags"><span class="pill sev-${f.issue.severity}">${esc(f.issue.severity)}</span><strong>${esc(CODE_LABELS[f.issue.code] || f.issue.code)}</strong><span class="chip">${esc(sectionName(f.section))}</span>${outcome === "found" ? `<span class="outcome found">Expected by lawyer</span>` : outcome === "false_alarm" ? `<span class="outcome false_alarm">False alarm</span>` : ""}</div>
-            <p>${esc(f.issue.rationale)}</p>
-            <div class="quote">${esc(f.clause ? f.clause.text : "")}</div>
-            <p class="why">Rule confidence ${Math.round(f.issue.confidence * 100)}% · ${f.issue.requires_legal_research ? "goes to legal research" : "no research needed"} · <span class="mono">${esc(f.issue.code)}</span></p>
-          </article>`;
-        }).join("") : `<p class="sample-note">No findings raised.</p>`}</div>
-        ${hints.length ? `<p class="sample-note">${hints.length} long clause${hints.length === 1 ? "" : "s"} could not be classified; the product flags these for AI or human analysis. They are not scored.</p>` : ""}`;
-    },
-
-    p14(step) {
-      const items = proceeding();
-      return stageHead(step, "Legal research", "Each finding becomes a research query against the Polish legal corpus for that jurisdiction only. The corpus is still being prepared, so the pipeline returns one fixed test citation for every query.") + `
-        <div class="banner"><strong>Placeholder.</strong> Every finding gets the same test citation below. Real sources come once the PL corpus is loaded.</div>
-        <div class="list">${items.map((f) => `
-          <article class="card">
-            <div class="tags"><strong>${esc(CODE_LABELS[f.issue.code])}</strong><span class="chip">${esc(sectionName(f.section))}</span></div>
-            <dl class="kv">
-              <dt>Query</dt><dd class="mono">${esc(["PL", f.issue.category, f.issue.code.replaceAll("_", " "), f.issue.rationale, "legal basis court practice official guidance"].join(" "))}</dd>
-              <dt>Source</dt><dd>${esc(FIXTURE.citation.label)}, ${esc(FIXTURE.citation.section)} <span class="chip">${esc(FIXTURE.citation.version)}</span></dd>
-              <dt>Publisher</dt><dd>${esc(FIXTURE.citation.publisher)}, in force from ${esc(FIXTURE.citation.effective)}</dd>
-            </dl>
-            <div class="quote">${esc(FIXTURE.citation.quote)}</div>
-          </article>`).join("") || `<p class="sample-note">No findings to research.</p>`}</div>`;
-    },
-
-    p15(step) {
-      const items = proceeding();
-      return stageHead(step, "Evidence-grounded analysis", "Each finding is analysed against its evidence: a legal conclusion, the practical risk and a recommendation. No AI model is connected to this step yet; the test adapter returns the same analysis for every finding, written for a liability clause.") + `
-        <div class="banner"><strong>Placeholder.</strong> Same canned analysis for every finding, which is why a GDPR or payment finding below still talks about liability.</div>
-        <div class="list">${items.map((f) => `
-          <article class="card">
-            <div class="tags"><strong>${esc(CODE_LABELS[f.issue.code])}</strong><span class="chip">${esc(sectionName(f.section))}</span><span class="chip">confidence ${FIXTURE.analysis.confidence}</span></div>
-            <dl class="kv">
-              <dt>Conclusion</dt><dd>${esc(FIXTURE.analysis.conclusion)}</dd>
-              <dt>Practical risk</dt><dd>${esc(FIXTURE.analysis.risk)}</dd>
-              <dt>Recommendation</dt><dd>${esc(FIXTURE.analysis.recommendation)}</dd>
-              <dt>Evidence</dt><dd>${esc(FIXTURE.citation.label)}</dd>
-            </dl>
-          </article>`).join("") || `<p class="sample-note">Nothing to analyse.</p>`}</div>`;
-    },
-
-    p16(step) {
-      const items = proceeding();
-      return stageHead(step, "Proposed amendments", "For each finding the pipeline drafts replacement wording for the clause. The test adapter returns one fixed Polish liability-cap sentence for every finding.") + `
-        <div class="banner"><strong>Placeholder.</strong> One canned amendment text, reused for every finding.</div>
-        <div class="list">${items.map((f) => `
-          <article class="card">
-            <div class="tags"><strong>${esc(CODE_LABELS[f.issue.code])}</strong><span class="chip">${esc(sectionName(f.section))}</span><span class="chip">risk after: ${esc(FIXTURE.amendment.riskAfter)}</span></div>
-            <span class="label">Current wording</span><div class="quote">${esc(f.clause ? f.clause.text : "")}</div>
-            <span class="label">Proposed wording</span><div class="quote">${esc(FIXTURE.amendment.text)}</div>
-            <p class="why">${esc(FIXTURE.amendment.reason)}</p>
-          </article>`).join("") || `<p class="sample-note">No amendments proposed.</p>`}</div>`;
-    },
-
-    p17(step) {
-      const items = proceeding();
-      if (state.p17) {
-        const approved = state.p17.decisions.filter((d) => d.decision === "approve").length;
-        return stageHead(step, "Lawyer review of amendments", "A qualified lawyer decides on every proposed amendment. Only approved amendments can reach the redline.") + `
-          <div class="facts">
-            <div class="fact good"><span class="v">${approved}</span><span class="k">approved</span></div>
-            <div class="fact"><span class="v">${state.p17.decisions.length - approved}</span><span class="k">rejected or sent back</span></div>
-          </div>
-          <dl class="kv"><dt>Reviewer</dt><dd>${esc(state.p17.reviewer)} (${esc(state.p17.role)})</dd><dt>Recorded</dt><dd>${esc(state.p17.at)}</dd></dl>
-          <div class="row"><button class="btn primary" type="button" data-goto="p18">Open the redline</button><button class="btn" type="button" data-action="reset17">Change decisions</button></div>`;
-      }
-      if (!items.length) return stageHead(step, "Lawyer review of amendments", "There are no proposed amendments to review.") + `<div class="locked">Nothing to decide for this contract.</div>`;
-      return stageHead(step, "Lawyer review of amendments", "Decide on every proposed amendment. This checkpoint cannot be skipped: the redline (P1.8) is built only from what you approve here.") + `
-        <form id="form17" class="list" novalidate>
-          ${items.map((f, i) => `
-            <fieldset class="decision">
-              <legend class="tags"><strong>${esc(CODE_LABELS[f.issue.code])}</strong><span class="chip">${esc(sectionName(f.section))}</span></legend>
-              <div class="quote">${esc(FIXTURE.amendment.text)}</div>
-              <div class="choices" role="radiogroup" aria-label="Decision">
-                <label><input type="radio" name="d${i}" value="approve" id="d${i}-a"> Approve</label>
-                <label><input type="radio" name="d${i}" value="request_changes" id="d${i}-c"> Request changes</label>
-                <label><input type="radio" name="d${i}" value="reject" id="d${i}-r"> Reject</label>
-              </div>
-            </fieldset>`).join("")}
-          <div class="reviewer">
-            <div class="field"><label for="rev17">Reviewer name</label><input type="text" id="rev17" autocomplete="name" placeholder="e.g. Anna Kowalska"></div>
-            <div class="field"><label for="role17">Qualification</label><input type="text" id="role17" placeholder="e.g. radca prawny"></div>
-          </div>
-          <label class="confirm"><input type="checkbox" id="conf17"> I am a qualified lawyer and I have personally reviewed the findings, the evidence and each amendment.</label>
-          <p class="form-error" id="err17" role="alert"></p>
-          <div class="row"><button class="btn primary" type="submit">Record decisions</button><button class="btn" type="button" data-action="approveAll">Mark all approved</button></div>
-        </form>`;
-    },
-
-    p18(step) {
-      if (!state.p17) return stageHead(step, "Redline", "The redline is built only from amendments approved at P1.7.") + `<div class="locked">Locked until the lawyer review at P1.7 is recorded.</div>`;
-      const approved = state.p17.decisions.filter((d) => d.decision === "approve");
-      return stageHead(step, "Redline", "Approved amendments only. In the product this step writes a reviewed DOCX with tracked wording; here it is shown on the page.") + `
-        <div class="facts"><div class="fact"><span class="v">${approved.length}</span><span class="k">changes in the redline</span></div><div class="fact"><span class="v">${state.p17.decisions.length - approved.length}</span><span class="k">left out (not approved)</span></div></div>
-        <div class="list">${approved.map((d) => {
-          const f = state.findings.find((x) => x.key === d.key);
-          return `<article class="card"><div class="tags"><span class="chip">${esc(sectionName(f.section))}</span><strong>${esc(CODE_LABELS[f.issue.code])}</strong></div>
-            <div class="redline"><p><del>${esc(f.clause ? f.clause.text : "")}</del></p><p><ins>${esc(FIXTURE.amendment.text)}</ins></p></div>
-            ${f.clause && f.clause.detection_method === "heading" && f.clause.start_block_sequence === f.clause.end_block_sequence ? `<p class="why">This finding was raised on the section heading alone (the clause-splitting problem shown in P1.2), so the amendment replaces only the heading.</p>` : ""}</article>`;
-        }).join("") || `<p class="sample-note">No amendment was approved, so the redline contains no changes.</p>`}</div>
-        <div class="row"><button class="btn primary" type="button" data-goto="p19">Go to final review</button></div>`;
-    },
-
-    p19(step) {
-      if (!state.p17) return stageHead(step, "Final document review", "A separate review of the finished document, bound to this exact redline.") + `<div class="locked">Locked until P1.7 is recorded.</div>`;
-      if (state.p19) {
-        return stageHead(step, "Final document review", "A separate review of the finished document, bound to this exact redline.") + `
-          <dl class="kv"><dt>Decision</dt><dd>${state.p19.decision === "approve" ? "Approved for local closure" : "Changes requested"}</dd><dt>Reviewer</dt><dd>${esc(state.p19.reviewer)}</dd><dt>Redline reviewed</dt><dd class="mono">${esc(short(state.p19.redlineHash))}</dd><dt>Recorded</dt><dd>${esc(state.p19.at)}</dd></dl>
-          <div class="row"><button class="btn primary" type="button" data-goto="prov">See the audit trail</button><button class="btn" type="button" data-action="reset19">Change decision</button></div>`;
-      }
-      return stageHead(step, "Final document review", "Approving amendments at P1.7 does not approve the document. This second checkpoint reviews the finished redline as a whole and is bound to its exact contents.") + `
-        <form id="form19" class="list" novalidate>
-          <fieldset class="decision"><legend><strong>Decision on the reviewed document</strong></legend>
-            <div class="choices"><label><input type="radio" name="f19" value="approve" id="f19-a"> Approve</label><label><input type="radio" name="f19" value="request_changes" id="f19-c"> Request changes</label></div>
-          </fieldset>
-          <div class="reviewer"><div class="field"><label for="rev19">Reviewer name</label><input type="text" id="rev19" autocomplete="name" value="${esc(state.p17.reviewer)}"></div></div>
-          <label class="confirm"><input type="checkbox" id="conf19"> I reviewed the full redlined document, not only the individual amendments.</label>
-          <p class="form-error" id="err19" role="alert"></p>
-          <div class="row"><button class="btn primary" type="submit">Record final review</button></div>
-        </form>`;
-    },
-
-    prov(step) {
-      if (!state.p19) return stageHead(step, "Provenance and closure", "Every step is linked to the one before it by a hash, so the record can be checked independently.") + `<div class="locked">Available after the final review at P1.9.</div>`;
-      const a = state.analysis;
-      const links = [
-        ["Source document", "P1.1", a.document.source.sha256],
-        ["Contract structure", "P1.2", a.structure.contract_structure_id],
-        ["Issue report", "P1.3", a.report.report_id],
-        ["Amendment decisions", "P1.7", state.p17.hash],
-        ["Redline", "P1.8", state.p19.redlineHash],
-        ["Final review", "P1.9", state.p19.hash]
-      ];
-      return stageHead(step, "Provenance and closure", "One source document, one run, one jurisdiction. Each record points at the exact record before it; changing anything upstream breaks the chain.") + `
-        <div class="chain">${links.map(([name, num, hash]) => `
-          <div class="link"><div class="rail"><span class="dot"></span><span class="line"></span></div><div class="content"><strong>${esc(name)} <span class="mono">${num}</span></strong><span class="hash">${esc(hash)}</span></div></div>`).join("")}
-        </div>
-        <div class="closure">
-          <h3>Closure</h3>
-          <dl class="kv">
-            <dt>Status</dt><dd>${state.p19.decision === "approve" ? "Closed locally" : "Returned for changes"}</dd>
-            <dt>Jurisdiction</dt><dd>PL only, no fallback to other law</dd>
-            <dt>Delivery allowed</dt><dd><strong>No.</strong> Sending documents to clients stays blocked until the controlled pilot gate is passed.</dd>
-          </dl>
-        </div>`;
+      name = "pasted-contract.md";
+      title = "Your contract";
+    } else {
+      const sample = samples[Number(state.choice)];
+      text = sample.contract;
+      name = `${sample.id}.md`;
+      title = exampleName(sample);
     }
-  };
+    try {
+      const analysis = core.analyzeContract(text, name);
+      state.analysis = analysis;
+      state.sourceTitle = title;
+      state.findings = buildFindings(analysis);
+      state.findings.forEach((f) => { f.change = "pending"; });
+      state.lawyer = { name: "", role: "Lawyer", checked: false, confirmed: false, at: "" };
+      state.ack1 = false;
+      state.ack2 = false;
+      state.error = "";
+      state.log = [];
+      logEvent(`Contract loaded: ${title}`);
+      logEvent(`Checked for issues: ${state.findings.length} finding${state.findings.length === 1 ? "" : "s"}`);
+      go(2);
+    } catch (error) {
+      state.analysis = null;
+      state.error = "We could not read this text. Check that it is a contract in plain text or Markdown.";
+      renderChoose();
+      focusHeading();
+    }
+  }
+
+  function renderReview() {
+    const total = state.findings.length;
+    const reviewed = state.findings.filter((f) => f.reviewed).length;
+    const count = (sev) => state.findings.filter((f) => f.severity === sev).length;
+    const headline = total === 0
+      ? "We did not find anything to flag"
+      : `We found ${total} ${total === 1 ? "thing" : "things"} to look at`;
+    const lead = total === 0
+      ? "These checks did not flag anything. That does not mean the contract is safe, so a lawyer should still read it."
+      : "These are places where the wording may leave a gap or be unclear. They are not proof of a problem. A qualified lawyer should decide what to do about each one.";
+    const varied = new Set(state.findings.map((f) => f.severity)).size > 1;
+    const pills = total === 0 ? "" : `
+      ${varied ? `<div class="count-row">
+        ${count("high") ? `<span class="pill p-high">${count("high")} high priority</span>` : ""}
+        ${count("medium") ? `<span class="pill p-medium">${count("medium")} medium priority</span>` : ""}
+        ${count("low") ? `<span class="pill p-low">${count("low")} low priority</span>` : ""}
+      </div>` : ""}
+      <div class="progress-line">
+        <progress max="${total}" value="${reviewed}" aria-label="Findings reviewed"></progress>
+        <span>${reviewed} of ${total} reviewed</span>
+      </div>`;
+    const items = state.findings.map((f) => `
+      <li class="finding ${f.reviewed ? "is-reviewed" : ""}">
+        <div class="f-head">
+          <h2>${h(f.title)}</h2>
+          ${varied ? `<span class="pill p-${f.severity}">${PRIORITY[f.severity]}</span>` : ""}
+        </div>
+        <p class="where">${h(sectionLabel(f.section))}</p>
+        <p><strong>What it means.</strong> ${h(f.meaning)}</p>
+        <p><strong>What to ask for.</strong> ${h(f.ask)}</p>
+        <details>
+          <summary>Read the contract text</summary>
+          <blockquote>${h(quote(f.clauseText))}</blockquote>
+        </details>
+        <label class="check">
+          <input type="checkbox" data-key="${h(f.key)}" ${f.reviewed ? "checked" : ""}>
+          <span>I have looked at this</span>
+        </label>
+      </li>`).join("");
+    view.innerHTML = `
+      <h1 tabindex="-1">${h(headline)}</h1>
+      <p class="lead">${h(lead)}</p>
+      <p class="fine">Contract: ${h(state.sourceTitle)}</p>
+      <div class="note placeholder-note"><span class="tag">Placeholder</span> Law references are not connected in this demo. A live version would look up the relevant Polish law here.</div>
+      ${pills}
+      <ol class="findings">${items}</ol>
+      <div class="actions">
+        <button type="button" class="btn" data-go="1">Back</button>
+        <button type="button" class="btn primary" data-go="3">${total === 0 ? "Continue" : "Suggest changes"}</button>
+      </div>`;
+  }
+
+  function renderChanges() {
+    const total = state.findings.length;
+    const accepted = state.findings.filter((f) => f.change === "accepted").length;
+    const decided = state.findings.filter((f) => f.change !== "pending").length;
+    const cards = state.findings.map((f) => `
+      <li class="finding change-card ${f.change === "accepted" ? "is-accepted" : f.change === "skipped" ? "is-skipped" : ""}">
+        <div class="f-head">
+          <h2>${h(f.title)}</h2>
+          <span class="status-pill">${f.change === "accepted" ? "Accepted" : f.change === "skipped" ? "Skipped" : "Not decided"}</span>
+        </div>
+        <p class="where">${h(sectionLabel(f.section))}</p>
+        <p><strong>Current wording.</strong></p>
+        <blockquote>${h(quote(f.clauseText))}</blockquote>
+        <p><strong>Proposed wording.</strong> <span class="tag">Placeholder</span></p>
+        <blockquote class="proposed">${h(PLACEHOLDER_WORDING)}</blockquote>
+        <div class="choice-row" role="group" aria-label="Decision for ${h(f.title)}">
+          <button type="button" class="btn ${f.change === "accepted" ? "primary" : ""}" data-change="${h(f.key)}" data-value="accepted" aria-pressed="${f.change === "accepted"}">Accept</button>
+          <button type="button" class="btn ${f.change === "skipped" ? "primary" : ""}" data-change="${h(f.key)}" data-value="skipped" aria-pressed="${f.change === "skipped"}">Skip</button>
+        </div>
+      </li>`).join("");
+    view.innerHTML = `
+      <h1 tabindex="-1">Suggested changes</h1>
+      <p class="lead">For each point, accept the change or skip it. In a live version, wording would be drafted for you and checked by a lawyer.</p>
+      <div class="note placeholder-note"><span class="tag">Placeholder</span> The proposed wording above is a fixed example, not drafted by AI.</div>
+      <div class="progress-line">
+        <progress max="${total}" value="${decided}" aria-label="Decisions made"></progress>
+        <span>${decided} of ${total} decided · ${accepted} accepted</span>
+      </div>
+      <ol class="findings">${cards}</ol>
+      <div class="actions">
+        <button type="button" class="btn" data-go="2">Back</button>
+        <button type="button" class="btn primary" data-go="4">Continue to lawyer check</button>
+      </div>`;
+  }
+
+  function renderLawyer() {
+    const ready = state.lawyer.name.trim().length > 0 && state.lawyer.checked;
+    view.innerHTML = `
+      <h1 tabindex="-1">Lawyer check</h1>
+      <p class="lead">Nothing is final until a qualified lawyer has read the findings and the suggested changes. Enter who is confirming.</p>
+      ${state.lawyer.confirmed ? `<div class="calm"><p><strong>Confirmed.</strong> ${h(state.lawyer.name)} (${h(state.lawyer.role)}) confirmed at ${h(state.lawyer.at)}.</p></div>` : ""}
+      <form class="form" id="lawyerForm" novalidate>
+        <div class="field">
+          <label for="lawyerName">Name</label>
+          <input id="lawyerName" type="text" autocomplete="name" value="${h(state.lawyer.name)}" ${state.lawyer.confirmed ? "disabled" : ""}>
+        </div>
+        <div class="field">
+          <label for="lawyerRole">Role</label>
+          <select id="lawyerRole" ${state.lawyer.confirmed ? "disabled" : ""}>
+            ${["Lawyer", "Legal adviser", "Other"].map((r) => `<option ${state.lawyer.role === r ? "selected" : ""}>${r}</option>`).join("")}
+          </select>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="lawyerChecked" ${state.lawyer.checked ? "checked" : ""} ${state.lawyer.confirmed ? "disabled" : ""}>
+          <span>I have read the findings and the suggested changes, and I confirm they are right for this contract.</span>
+        </label>
+      </form>
+      <div class="actions">
+        <button type="button" class="btn" data-go="3">Back</button>
+        ${state.lawyer.confirmed
+          ? `<button type="button" class="btn primary" data-go="5">Continue to summary</button>`
+          : `<button type="button" class="btn primary" data-action="confirm" id="confirmBtn" ${ready ? "" : "disabled"}>Confirm</button>`}
+      </div>
+      <p class="fine">In this demo the name is only kept in this browser tab.</p>`;
+  }
+
+  function renderFinish() {
+    const accepted = state.findings.filter((f) => f.change === "accepted");
+    const skipped = state.findings.filter((f) => f.change === "skipped");
+    const redlines = accepted.map((f) => `
+      <li class="redline-item">
+        <p class="where">${h(sectionLabel(f.section))} · ${h(f.title)}</p>
+        <div class="redline">
+          <del>${h(quote(f.clauseText))}</del>
+          <ins>${h(PLACEHOLDER_WORDING)}</ins>
+        </div>
+      </li>`).join("");
+    const log = state.log.map((e) => `<li><span class="status">${h(e.time)}</span> ${h(e.text)}</li>`).join("");
+    view.innerHTML = `
+      <h1 tabindex="-1">Your summary</h1>
+      <p class="lead">${accepted.length} ${accepted.length === 1 ? "change" : "changes"} accepted, ${skipped.length} skipped. Confirmed by ${h(state.lawyer.name || "nobody yet")}.</p>
+      <h2 class="sub">Redline</h2>
+      ${accepted.length
+        ? `<ol class="redline-list">${redlines}</ol>`
+        : `<p class="fine">No changes were accepted, so there is nothing to show.</p>`}
+      <h2 class="sub">Activity record</h2>
+      <ol class="log">${log}<li><span class="status">${h(stamp())}</span> Summary opened</li></ol>
+      <div class="ack">
+        <label class="check"><input type="checkbox" id="ack1" ${state.ack1 ? "checked" : ""}><span>I understand this is a demo and not legal advice.</span></label>
+        <label class="check"><input type="checkbox" id="ack2" ${state.ack2 ? "checked" : ""}><span>I will have a qualified lawyer check this contract before I sign or rely on it.</span></label>
+      </div>
+      <div class="calm"><p>Your text stays in this browser. Saving the summary downloads a plain text file to your device.</p></div>
+      <div class="actions">
+        <button type="button" class="btn" data-go="4">Back</button>
+        <button type="button" class="btn" data-action="restart">Check another contract</button>
+        <button type="button" class="btn primary" data-action="download">Download summary</button>
+      </div>`;
+  }
+
+  function downloadSummary() {
+    const date = new Date().toISOString().slice(0, 10);
+    const lines = [
+      "Contract check: summary",
+      `Date: ${date}`,
+      `Contract: ${state.sourceTitle}`,
+      `Lawyer check: ${state.lawyer.confirmed ? `${state.lawyer.name} (${state.lawyer.role})` : "not confirmed"}`,
+      "",
+      state.findings.length ? "Findings:" : "No findings were flagged.",
+      ...state.findings.map((f, i) => [
+        `${i + 1}. ${f.title} (${PRIORITY[f.severity]}) - ${sectionLabel(f.section)}`,
+        `   What it means: ${f.meaning}`,
+        `   What to ask for: ${f.ask}`,
+        `   Review: ${f.reviewed ? "Looked at" : "Not looked at yet"}`,
+        `   Suggested change: ${f.change === "accepted" ? "Accepted (placeholder wording)" : f.change === "skipped" ? "Skipped" : "Not decided"}`
+      ].join("\n")),
+      "",
+      "Activity record:",
+      ...state.log.map((e) => `   ${e.time}  ${e.text}`),
+      "",
+      "This is a demo summary. It is not legal advice.",
+      "Have a qualified lawyer check the contract before you sign or rely on it."
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "contract-check-summary.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function restart() {
+    state.choice = samples.length ? String(DEFAULT_EXAMPLE) : "own";
+    state.pasted = "";
+    state.error = "";
+    state.analysis = null;
+    state.findings = [];
+    state.lawyer = { name: "", role: "Lawyer", checked: false, confirmed: false, at: "" };
+    state.ack1 = false;
+    state.ack2 = false;
+    state.log = [];
+    go(1);
+  }
+
+  function focusHeading() {
+    const heading = view.querySelector("h1");
+    if (heading) heading.focus({ preventScroll: false });
+  }
 
   function render() {
-    renderDocket();
-    const stage = $("stage");
-    if (state.error) { stage.innerHTML = `<p class="form-error" role="alert">${esc(state.error)}</p>`; return; }
-    if (!state.analysis) { stage.innerHTML = `<div class="locked">Run a review to fill the case file.</div>`; return; }
-    const step = STEPS.find((s) => s.id === state.step);
-    stage.innerHTML = renderers[step.id](step);
-    stage.setAttribute("aria-label", `${step.num} ${step.name}`);
+    renderSteps();
+    if (state.step === 1) renderChoose();
+    else if (state.step === 2) renderReview();
+    else if (state.step === 3) renderChanges();
+    else if (state.step === 4) renderLawyer();
+    else renderFinish();
   }
 
-  // ---------- review actions ----------
-  const now = () => new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC";
-  function record17(event) {
-    event.preventDefault();
-    const items = proceeding();
-    const decisions = items.map((f, i) => ({ key: f.key, decision: (document.querySelector(`input[name="d${i}"]:checked`) || {}).value }));
-    const reviewer = $("rev17").value.trim(), role = $("role17").value.trim();
-    const err = [];
-    if (decisions.some((d) => !d.decision)) err.push("Decide on every amendment.");
-    if (!reviewer || !role) err.push("Enter the reviewer's name and qualification.");
-    if (!$("conf17").checked) err.push("Confirm the qualification statement.");
-    if (err.length) { $("err17").textContent = err.join(" "); return; }
-    const hash = core.sha256(JSON.stringify({ report: state.analysis.report.report_id, decisions, reviewer, role }));
-    state.p17 = { decisions, reviewer, role, at: now(), hash };
-    state.p19 = null;
+  function go(step) {
+    let target = step;
+    if (target >= 2 && !state.analysis) target = 1;
+    if (target === 5 && !state.lawyer.confirmed) target = 4;
+    state.step = target;
     render();
-  }
-  function record19(event) {
-    event.preventDefault();
-    const choice = (document.querySelector('input[name="f19"]:checked') || {}).value;
-    const reviewer = $("rev19").value.trim();
-    const err = [];
-    if (!choice) err.push("Choose a decision.");
-    if (!reviewer) err.push("Enter the reviewer's name.");
-    if (!$("conf19").checked) err.push("Confirm you reviewed the full document.");
-    if (err.length) { $("err19").textContent = err.join(" "); return; }
-    const approved = state.p17.decisions.filter((d) => d.decision === "approve").map((d) => d.key);
-    const redlineHash = core.sha256(JSON.stringify({ decisions: state.p17.hash, approved, text: FIXTURE.amendment.text }));
-    state.p19 = { decision: choice, reviewer, at: now(), redlineHash, hash: core.sha256(JSON.stringify({ redlineHash, choice, reviewer })) };
-    render();
+    focusHeading();
   }
 
-  // ---------- events ----------
-  $("docket").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-step]");
-    if (!btn) return;
-    state.step = btn.dataset.step;
-    render();
-  });
-  $("docket").addEventListener("keydown", (e) => {
-    if (!["ArrowRight", "ArrowLeft"].includes(e.key)) return;
-    const i = STEPS.findIndex((s) => s.id === state.step);
-    const next = STEPS[(i + (e.key === "ArrowRight" ? 1 : STEPS.length - 1)) % STEPS.length];
-    state.step = next.id; render();
-    document.querySelector(`[data-step="${next.id}"]`)?.focus();
-  });
-  $("stage").addEventListener("click", (e) => {
-    const go = e.target.closest("[data-goto]");
-    if (go) { state.step = go.dataset.goto; render(); return; }
-    const action = e.target.closest("[data-action]")?.dataset.action;
-    if (action === "reset17") { state.p17 = null; state.p19 = null; render(); }
-    if (action === "reset19") { state.p19 = null; render(); }
-    if (action === "approveAll") document.querySelectorAll('#form17 input[value="approve"]').forEach((input) => { input.checked = true; });
-  });
-  $("stage").addEventListener("submit", (e) => {
-    if (e.target.id === "form17") record17(e);
-    if (e.target.id === "form19") record19(e);
-  });
-  $("sample").addEventListener("change", (e) => { loadSample(e.target.value === "custom" ? "custom" : Number(e.target.value)); if (e.target.value !== "custom") run(); });
-  $("run").addEventListener("click", run);
-  $("file").addEventListener("change", async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    $("contract").value = await file.text();
-    $("sample").value = "custom"; state.sampleIndex = "custom";
-    $("sample-note").textContent = `Loaded ${file.name}. Without a lawyer's expected findings the results are not scored.`;
-    run();
+  view.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.dataset.action === "check") runCheck();
+    else if (button.dataset.action === "download") downloadSummary();
+    else if (button.dataset.action === "restart") restart();
+    else if (button.dataset.action === "confirm") {
+      state.lawyer.confirmed = true;
+      state.lawyer.at = stamp();
+      logEvent(`Lawyer check confirmed by ${state.lawyer.name} (${state.lawyer.role})`);
+      renderLawyer();
+      focusHeading();
+    } else if (button.dataset.change) {
+      const finding = state.findings.find((f) => f.key === button.dataset.change);
+      if (finding) {
+        finding.change = button.dataset.value;
+        logEvent(`${finding.change === "accepted" ? "Accepted" : "Skipped"} suggested change: ${finding.title}`);
+        renderChanges();
+        const again = view.querySelector(`button[data-change="${CSS.escape(finding.key)}"][data-value="${finding.change}"]`);
+        if (again) again.focus();
+      }
+    } else if (button.dataset.go) go(Number(button.dataset.go));
   });
 
-  fillSamples();
-  if (!core) { $("stage").innerHTML = `<p class="form-error">The review engine did not load.</p>`; return; }
-  const start = Math.max(0, samples.findIndex((s) => s.id === "pl-maintenance-unlimited-liability"));
-  $("sample").value = String(start);
-  loadSample(start);
-  run();
+  view.addEventListener("change", (event) => {
+    const target = event.target;
+    if (target.name === "contract") {
+      state.choice = target.value;
+      const box = document.getElementById("pasteBox");
+      if (box) box.hidden = state.choice !== "own";
+      return;
+    }
+    if (target.dataset && target.dataset.key) {
+      const finding = state.findings.find((f) => f.key === target.dataset.key);
+      if (!finding) return;
+      finding.reviewed = target.checked;
+      if (target.checked) logEvent(`Reviewed: ${finding.title}`);
+      renderReview();
+      const again = view.querySelector(`input[data-key="${CSS.escape(finding.key)}"]`);
+      if (again) again.focus();
+      return;
+    }
+    if (target.id === "lawyerChecked") {
+      state.lawyer.checked = target.checked;
+      const btn = document.getElementById("confirmBtn");
+      if (btn) btn.disabled = !(state.lawyer.name.trim() && state.lawyer.checked);
+      return;
+    }
+    if (target.id === "lawyerRole") state.lawyer.role = target.value;
+    if (target.id === "ack1") state.ack1 = target.checked;
+    if (target.id === "ack2") state.ack2 = target.checked;
+  });
+
+  view.addEventListener("input", (event) => {
+    if (event.target.id === "pasteText") state.pasted = event.target.value;
+    if (event.target.id === "lawyerName") {
+      state.lawyer.name = event.target.value;
+      const btn = document.getElementById("confirmBtn");
+      if (btn) btn.disabled = !(state.lawyer.name.trim() && state.lawyer.checked);
+    }
+  });
+
+  stepsEl.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-go]");
+    if (button) go(Number(button.dataset.go));
+  });
+
+  if (!core) {
+    view.innerHTML = `<h1 tabindex="-1">Something went wrong</h1><p class="lead">The checker did not load. Try refreshing the page.</p>`;
+    stepsEl.innerHTML = "";
+    return;
+  }
+  render();
 })();
+
 </script>
+</body>
+</html>
